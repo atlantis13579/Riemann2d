@@ -1,0 +1,95 @@
+#include "Test.h"
+
+#include "Collision/Box2.h"
+#include "Dynamics/PhysicsWorld2D.h"
+#include "Fluid/FluidRigidCoupling2D.h"
+#include "Fluid/FluidSimulation2D.h"
+
+#include <cmath>
+#include <memory>
+
+using namespace Riemann2D;
+
+R2_TEST("Fluid particles fall under gravity and remain inside bounds")
+{
+    FluidSimulation2D fluid;
+    fluid.CreateBlock({-1.0f, 3.0f}, {1.0f, 5.0f}, 0.3f);
+    const auto centerY = [&fluid]
+    {
+        float sum = 0.0f;
+        for (const FluidParticle2D& particle : fluid.GetParticles()) sum += particle.Position.Y;
+        return sum / static_cast<float>(fluid.GetParticles().size());
+    };
+    const float initialCenter = centerY();
+    for (int step = 0; step < 90; ++step) fluid.Step(1.0f / 120.0f);
+    R2_REQUIRE(centerY() < initialCenter - 0.5f);
+    const FluidSettings2D& settings = fluid.GetSettings();
+    for (const FluidParticle2D& particle : fluid.GetParticles())
+    {
+        R2_REQUIRE(std::isfinite(particle.Position.X) && std::isfinite(particle.Position.Y));
+        R2_REQUIRE(std::isfinite(particle.Velocity.X) && std::isfinite(particle.Velocity.Y));
+        R2_REQUIRE(particle.Position.X >= settings.BoundsMinimum.X);
+        R2_REQUIRE(particle.Position.X <= settings.BoundsMaximum.X);
+        R2_REQUIRE(particle.Position.Y >= settings.BoundsMinimum.Y);
+        R2_REQUIRE(particle.Position.Y <= settings.BoundsMaximum.Y);
+        R2_REQUIRE(particle.Density > 0.0f);
+    }
+}
+
+R2_TEST("Fluid sampling reports occupancy and local velocity")
+{
+    FluidSimulation2D fluid;
+    fluid.CreateBlock({-1.0f, -1.0f}, {1.0f, 1.0f}, 0.3f);
+
+    R2_REQUIRE(fluid.SampleOccupancy(Vector2::Zero()) > 0.9f);
+    R2_REQUIRE(NearlyEqual(fluid.SampleOccupancy({5.0f, 5.0f}), 0.0f));
+    R2_REQUIRE(fluid.SampleVelocity(Vector2::Zero()).SquareLength() <= Epsilon);
+}
+
+R2_TEST("Rotated fluid container keeps particles sealed in local bounds")
+{
+    FluidSimulation2D fluid;
+    FluidSettings2D& settings = fluid.GetSettings();
+    settings.BoundsMinimum = {-1.0f, -1.0f};
+    settings.BoundsMaximum = {1.0f, 1.0f};
+    settings.ContainerTransform.Position = {2.0f, 3.0f};
+    settings.ContainerTransform.Angle = 0.7f;
+    fluid.CreateBlock({-0.8f, -0.8f}, {0.8f, 0.8f}, 0.3f);
+
+    for (int step = 0; step < 120; ++step) fluid.Step(1.0f / 120.0f);
+
+    for (const FluidParticle2D& particle : fluid.GetParticles())
+    {
+        const Vector2 localPosition =
+            settings.ContainerTransform.InverseTransformPoint(particle.Position);
+        R2_REQUIRE(localPosition.X >= settings.BoundsMinimum.X);
+        R2_REQUIRE(localPosition.X <= settings.BoundsMaximum.X);
+        R2_REQUIRE(localPosition.Y >= settings.BoundsMinimum.Y);
+        R2_REQUIRE(localPosition.Y <= settings.BoundsMaximum.Y);
+    }
+}
+
+R2_TEST("Fluid force field makes a low-density box buoyant")
+{
+    FluidSimulation2D fluid;
+    fluid.CreateBlock({-1.5f, -1.5f}, {1.5f, 1.5f}, 0.3f);
+
+    PhysicsWorld2D world;
+    RigidBodyDesc2D bodyDescription;
+    bodyDescription.Shape = std::make_shared<Box2>(Vector2{0.5f, 0.5f});
+    bodyDescription.Density = 0.5f;
+    bodyDescription.LinearDamping = 0.0f;
+    RigidBody2D& body = world.CreateBody(bodyDescription);
+    auto coupling = std::make_unique<FluidRigidCoupling2D>(&fluid);
+    FluidRigidCouplingResult2D result;
+    R2_REQUIRE(coupling->Evaluate(body, result));
+    R2_REQUIRE(result.ActiveSampleCount == result.SampleCount);
+    R2_REQUIRE(result.BuoyancyForce.Y > 0.0f);
+    R2_REQUIRE(result.SubmergedArea > 0.95f);
+    world.AddForceField(std::move(coupling));
+
+    world.Step(1.0f / 60.0f);
+
+    R2_REQUIRE(world.GetForceFieldCount() == 1);
+    R2_REQUIRE(body.GetLinearVelocity().Y > 0.0f);
+}

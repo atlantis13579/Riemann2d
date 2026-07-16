@@ -1,0 +1,96 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="F:\src\Riemann2d\Viewer\FluidSurfaceBuilder.cpp">
+      <Filter>Viewer</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Viewer\GeometryBuilder.cpp">
+      <Filter>Viewer</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Viewer\Viewer.cpp">
+      <Filter>Viewer</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Viewer\Render\ImmediateUI.cpp">
+      <Filter>Viewer\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Viewer\Render\RenderThread.cpp">
+      <Filter>Viewer\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Viewer\Render\Renderer2.cpp">
+      <Filter>Viewer\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Viewer\Render\RHI\Null\NullRHI.cpp">
+      <Filter>Viewer\Render\RHI\Null</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Viewer\Render\RHI\DX11\DX11RHI.cpp">
+      <Filter>Viewer\Render\RHI\DX11</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Viewer\Render\RHI\PlatformRHI.cpp">
+      <Filter>Viewer\Render\RHI</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Viewer\WinApplication.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="F:\src\Riemann2d\Viewer\FluidSurfaceBuilder.h">
+      <Filter>Viewer</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Viewer\GeometryBuilder.h">
+      <Filter>Viewer</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Viewer\Viewer.h">
+      <Filter>Viewer</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Viewer\Render\ImmediateUI.h">
+      <Filter>Viewer\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Viewer\Render\Projection.h">
+      <Filter>Viewer\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Viewer\Render\RenderThread.h">
+      <Filter>Viewer\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Viewer\Render\RenderTypes.h">
+      <Filter>Viewer\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Viewer\Render\Renderer2.h">
+      <Filter>Viewer\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Viewer\Render\RHI\RHI.h">
+      <Filter>Viewer\Render\RHI</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Viewer\Render\RHI\Null\NullRHI.h">
+      <Filter>Viewer\Render\RHI\Null</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Viewer\Render\RHI\DX11\DX11RHI.h">
+      <Filter>Viewer\Render\RHI\DX11</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Viewer\Render\RHI\PlatformRHI.h">
+      <Filter>Viewer\Render\RHI</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="F:\src\Riemann2d\Build\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{FE736904-6121-3655-97A4-CB8F151F3915}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Viewer">
+      <UniqueIdentifier>{4A2BD9D7-1EDE-3D2D-B7E6-699BC2293F00}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Viewer\Render">
+      <UniqueIdentifier>{49FFB61D-BDC5-3C13-AB9F-70CE5BFE1EEC}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Viewer\Render\RHI">
+      <UniqueIdentifier>{1E2586A5-2CA8-37BA-8480-5D685EF5B2D2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Viewer\Render\RHI\DX11">
+      <UniqueIdentifier>{DF683851-FF97-37ED-8AC3-F79D51496A74}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Viewer\Render\RHI\Null">
+      <UniqueIdentifier>{D0C93E28-3E86-3A8E-8741-A099EB70DBA5}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

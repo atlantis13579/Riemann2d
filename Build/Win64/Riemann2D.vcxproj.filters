@@ -1,0 +1,204 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="F:\src\Riemann2d\Src\Collision\Box2.cpp">
+      <Filter>Src\Collision</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Collision\Capsule2.cpp">
+      <Filter>Src\Collision</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Collision\Contact2.cpp">
+      <Filter>Src\Collision</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Collision\Convex2.cpp">
+      <Filter>Src\Collision</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Collision\DynamicAABBTree2.cpp">
+      <Filter>Src\Collision</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Collision\GJK2.cpp">
+      <Filter>Src\Collision</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Collision\NarrowPhase2.cpp">
+      <Filter>Src\Collision</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Collision\SAT2.cpp">
+      <Filter>Src\Collision</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Collision\Sphere2.cpp">
+      <Filter>Src\Collision</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Collision\StaticAABBTree2.cpp">
+      <Filter>Src\Collision</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Collision\TriangleMesh2.cpp">
+      <Filter>Src\Collision</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Destruction\DestructionCut2D.cpp">
+      <Filter>Src\Destruction</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Destruction\DestructionSet2D.cpp">
+      <Filter>Src\Destruction</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Dynamics\Constraints2D.cpp">
+      <Filter>Src\Dynamics</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Dynamics\ContactSolver2D.cpp">
+      <Filter>Src\Dynamics</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Dynamics\LCPSolver2D.cpp">
+      <Filter>Src\Dynamics</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Dynamics\LinearAlgebraBackend2D.cpp">
+      <Filter>Src\Dynamics</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Dynamics\PhysicsWorld2D.cpp">
+      <Filter>Src\Dynamics</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Dynamics\Ragdoll2D.cpp">
+      <Filter>Src\Dynamics</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Dynamics\RigidBody2D.cpp">
+      <Filter>Src\Dynamics</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Dynamics\SequentialImpulseSolver2D.cpp">
+      <Filter>Src\Dynamics</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Fluid\AerodynamicsSimulation2D.cpp">
+      <Filter>Src\Fluid</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Fluid\FluidRigidCoupling2D.cpp">
+      <Filter>Src\Fluid</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Fluid\FluidSimulation2D.cpp">
+      <Filter>Src\Fluid</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\SoftBody\RopeSimulation2D.cpp">
+      <Filter>Src\SoftBody</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="F:\src\Riemann2d\Src\Collision\AxisAlignedBox2.h">
+      <Filter>Src\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Collision\Box2.h">
+      <Filter>Src\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Collision\Capsule2.h">
+      <Filter>Src\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Collision\Contact2.h">
+      <Filter>Src\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Collision\Convex2.h">
+      <Filter>Src\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Collision\DynamicAABBTree2.h">
+      <Filter>Src\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Collision\GJK2.h">
+      <Filter>Src\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Collision\NarrowPhase2.h">
+      <Filter>Src\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Collision\SAT2.h">
+      <Filter>Src\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Collision\Shape2.h">
+      <Filter>Src\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Collision\Sphere2.h">
+      <Filter>Src\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Collision\StaticAABBTree2.h">
+      <Filter>Src\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Collision\TriangleMesh2.h">
+      <Filter>Src\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Destruction\DestructionCut2D.h">
+      <Filter>Src\Destruction</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Destruction\DestructionSet2D.h">
+      <Filter>Src\Destruction</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Dynamics\Constraints2D.h">
+      <Filter>Src\Dynamics</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Dynamics\ContactSolver2D.h">
+      <Filter>Src\Dynamics</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Dynamics\ContactSolverUtilities2D.h">
+      <Filter>Src\Dynamics</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Dynamics\ForceField2D.h">
+      <Filter>Src\Dynamics</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Dynamics\LCPSolver2D.h">
+      <Filter>Src\Dynamics</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Dynamics\LinearAlgebraBackend2D.h">
+      <Filter>Src\Dynamics</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Dynamics\PhysicsWorld2D.h">
+      <Filter>Src\Dynamics</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Dynamics\Ragdoll2D.h">
+      <Filter>Src\Dynamics</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Dynamics\RigidBody2D.h">
+      <Filter>Src\Dynamics</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Dynamics\SequentialImpulseSolver2D.h">
+      <Filter>Src\Dynamics</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\AerodynamicsSimulation2D.h">
+      <Filter>Src\Fluid</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\FluidRigidCoupling2D.h">
+      <Filter>Src\Fluid</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\FluidSimulation2D.h">
+      <Filter>Src\Fluid</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Maths\Maths.h">
+      <Filter>Src\Maths</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Maths\Transform2.h">
+      <Filter>Src\Maths</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Maths\Vector2.h">
+      <Filter>Src\Maths</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\SoftBody\RopeSimulation2D.h">
+      <Filter>Src\SoftBody</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="F:\src\Riemann2d\Build\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Src">
+      <UniqueIdentifier>{9C5B7D53-9FC8-3D4B-B98E-C183139A1F06}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Collision">
+      <UniqueIdentifier>{8EC33347-6221-3D26-9773-F420B8F55121}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Destruction">
+      <UniqueIdentifier>{CBC0198F-5BED-3FB1-A793-BA9F950D3CD5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Dynamics">
+      <UniqueIdentifier>{50D2A5D2-AD19-3A52-A8C6-619803F980AF}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Fluid">
+      <UniqueIdentifier>{F646168E-7274-37BC-ADB6-1564A40BCA8F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Maths">
+      <UniqueIdentifier>{7D6DAF36-D789-36C2-A6A4-224C18BDDBA1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\SoftBody">
+      <UniqueIdentifier>{D96A7939-C71D-32F3-AD87-4FEA76D1E5C2}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

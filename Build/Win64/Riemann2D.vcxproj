@@ -1,0 +1,224 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{DFA5773F-3B94-3D7D-8D57-9E04C2116109}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
+    <Platform>x64</Platform>
+    <ProjectName>Riemann2D</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">F:\src\Riemann2d\Binaries\Win64\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Riemann2D.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Riemann2D</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">F:\src\Riemann2d\Binaries\Win64\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Riemann2D.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Riemann2D</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>F:\src\Riemann2d\Src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /Zc:__cplusplus</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <ConformanceMode>true</ConformanceMode>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>F:\src\Riemann2d\Src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>F:\src\Riemann2d\Src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>F:\src\Riemann2d\Src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /Zc:__cplusplus</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <ConformanceMode>true</ConformanceMode>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR="Release"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>F:\src\Riemann2d\Src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>F:\src\Riemann2d\Src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="F:\src\Riemann2d\Build\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule F:/src/Riemann2d/Build/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SF:/src/Riemann2d/Build -BF:/src/Riemann2d/Build/Win64 --check-stamp-file F:/src/Riemann2d/Build/Win64/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CheckCXXSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CheckIncludeFileCXX.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CheckLibraryExists.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\FindThreads.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Internal\CheckSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Platform\WindowsPaths.cmake;F:\src\Riemann2d\Build\Win64\CMakeFiles\3.24.0-rc2\CMakeCXXCompiler.cmake;F:\src\Riemann2d\Build\Win64\CMakeFiles\3.24.0-rc2\CMakeRCCompiler.cmake;F:\src\Riemann2d\Build\Win64\CMakeFiles\3.24.0-rc2\CMakeSystem.cmake;F:\src\Riemann2d\Build\Win64\CMakeFiles\cmake.verify_globs;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">F:\src\Riemann2d\Build\Win64\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule F:/src/Riemann2d/Build/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SF:/src/Riemann2d/Build -BF:/src/Riemann2d/Build/Win64 --check-stamp-file F:/src/Riemann2d/Build/Win64/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CheckCXXSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CheckIncludeFileCXX.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CheckLibraryExists.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\FindThreads.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Internal\CheckSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Platform\WindowsPaths.cmake;F:\src\Riemann2d\Build\Win64\CMakeFiles\3.24.0-rc2\CMakeCXXCompiler.cmake;F:\src\Riemann2d\Build\Win64\CMakeFiles\3.24.0-rc2\CMakeRCCompiler.cmake;F:\src\Riemann2d\Build\Win64\CMakeFiles\3.24.0-rc2\CMakeSystem.cmake;F:\src\Riemann2d\Build\Win64\CMakeFiles\cmake.verify_globs;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">F:\src\Riemann2d\Build\Win64\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="F:\src\Riemann2d\Src\Collision\Box2.cpp" />
+    <ClCompile Include="F:\src\Riemann2d\Src\Collision\Capsule2.cpp" />
+    <ClCompile Include="F:\src\Riemann2d\Src\Collision\Contact2.cpp" />
+    <ClCompile Include="F:\src\Riemann2d\Src\Collision\Convex2.cpp" />
+    <ClCompile Include="F:\src\Riemann2d\Src\Collision\DynamicAABBTree2.cpp" />
+    <ClCompile Include="F:\src\Riemann2d\Src\Collision\GJK2.cpp" />
+    <ClCompile Include="F:\src\Riemann2d\Src\Collision\NarrowPhase2.cpp" />
+    <ClCompile Include="F:\src\Riemann2d\Src\Collision\SAT2.cpp" />
+    <ClCompile Include="F:\src\Riemann2d\Src\Collision\Sphere2.cpp" />
+    <ClCompile Include="F:\src\Riemann2d\Src\Collision\StaticAABBTree2.cpp" />
+    <ClCompile Include="F:\src\Riemann2d\Src\Collision\TriangleMesh2.cpp" />
+    <ClCompile Include="F:\src\Riemann2d\Src\Destruction\DestructionCut2D.cpp" />
+    <ClCompile Include="F:\src\Riemann2d\Src\Destruction\DestructionSet2D.cpp" />
+    <ClCompile Include="F:\src\Riemann2d\Src\Dynamics\Constraints2D.cpp" />
+    <ClCompile Include="F:\src\Riemann2d\Src\Dynamics\ContactSolver2D.cpp" />
+    <ClCompile Include="F:\src\Riemann2d\Src\Dynamics\LCPSolver2D.cpp" />
+    <ClCompile Include="F:\src\Riemann2d\Src\Dynamics\LinearAlgebraBackend2D.cpp" />
+    <ClCompile Include="F:\src\Riemann2d\Src\Dynamics\PhysicsWorld2D.cpp" />
+    <ClCompile Include="F:\src\Riemann2d\Src\Dynamics\Ragdoll2D.cpp" />
+    <ClCompile Include="F:\src\Riemann2d\Src\Dynamics\RigidBody2D.cpp" />
+    <ClCompile Include="F:\src\Riemann2d\Src\Dynamics\SequentialImpulseSolver2D.cpp" />
+    <ClCompile Include="F:\src\Riemann2d\Src\Fluid\AerodynamicsSimulation2D.cpp" />
+    <ClCompile Include="F:\src\Riemann2d\Src\Fluid\FluidRigidCoupling2D.cpp" />
+    <ClCompile Include="F:\src\Riemann2d\Src\Fluid\FluidSimulation2D.cpp" />
+    <ClCompile Include="F:\src\Riemann2d\Src\SoftBody\RopeSimulation2D.cpp" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Collision\AxisAlignedBox2.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Collision\Box2.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Collision\Capsule2.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Collision\Contact2.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Collision\Convex2.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Collision\DynamicAABBTree2.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Collision\GJK2.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Collision\NarrowPhase2.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Collision\SAT2.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Collision\Shape2.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Collision\Sphere2.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Collision\StaticAABBTree2.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Collision\TriangleMesh2.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Destruction\DestructionCut2D.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Destruction\DestructionSet2D.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Dynamics\Constraints2D.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Dynamics\ContactSolver2D.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Dynamics\ContactSolverUtilities2D.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Dynamics\ForceField2D.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Dynamics\LCPSolver2D.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Dynamics\LinearAlgebraBackend2D.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Dynamics\PhysicsWorld2D.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Dynamics\Ragdoll2D.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Dynamics\RigidBody2D.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Dynamics\SequentialImpulseSolver2D.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\AerodynamicsSimulation2D.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\FluidRigidCoupling2D.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\FluidSimulation2D.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Maths\Maths.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Maths\Transform2.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Maths\Vector2.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\SoftBody\RopeSimulation2D.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="F:\src\Riemann2d\Build\Win64\ZERO_CHECK.proj">
+      <Project>{D79E0BFB-3EC9-3917-9B5B-4AEA059FDEB3}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
