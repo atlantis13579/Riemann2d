@@ -12,6 +12,8 @@
 
 #include <cmath>
 #include <memory>
+#include <chrono>
+#include <cstdio>
 
 namespace Riemann2D::Viewer
 {
@@ -22,6 +24,10 @@ namespace Riemann2D::Viewer
         Scenes = {{"SHAPE GALLERY"}, {"JOINT CHAIN"},
                   {"ROPE XPBD"}, {"FLUID GRAVITY"}, {"AIR NO GRAVITY"},
                   {"DESTRUCTION"}, {"RAGDOLL"}};
+        if (GetCudaBackendInfo().Available)
+            PreferredFluidBackend = PreferredAirBackend = FluidComputeBackend::CUDA;
+        else if (GetComputeShaderBackendInfo().Available)
+            PreferredFluidBackend = PreferredAirBackend = FluidComputeBackend::ComputeShader;
         RebuildPhysicsScene();
 
         Render::NativeWindow window;
@@ -64,15 +70,28 @@ namespace Riemann2D::Viewer
             Rope->GetSettings().Gravity = {0.0f, Gravity};
             Rope->Step(deltaTime);
         }
+        const auto simulationStart = std::chrono::steady_clock::now();
         if (Fluid)
         {
             Fluid->Step(deltaTime);
         }
         if (Air)
         {
-            Air->AddDensity({-5.5f, 3.0f}, 0.25f);
-            Air->AddVelocity({-5.5f, 3.0f}, {0.8f, 0.25f * std::sin(AnimationTime)});
+            const float sourceStep = std::min(deltaTime, Air->GetSettings().MaximumTimeStep);
+            Air->AddEmitter({-4.8f, 1.7f}, 0.65f, 4.0f,
+                {3.4f, 0.85f * std::sin(AnimationTime * 1.7f)}, sourceStep);
+            Air->AddEmitter({2.8f, -0.5f}, 0.55f, 3.5f,
+                {-0.65f + 0.5f * std::sin(AnimationTime), 3.0f}, sourceStep);
+            if (input.MouseDown && input.MouseX > 260)
+                Air->AddEmitter(ScreenToWorld(input), 0.65f, 5.0f, {0.0f, 3.0f}, sourceStep);
             Air->Step(deltaTime);
+        }
+        if (Fluid || Air)
+        {
+            const float milliseconds = std::chrono::duration<float, std::milli>(
+                std::chrono::steady_clock::now() - simulationStart).count();
+            SimulationMilliseconds = SimulationMilliseconds == 0.0f ? milliseconds :
+                0.9f * SimulationMilliseconds + 0.1f * milliseconds;
         }
         if (Destruction)
         {
@@ -83,7 +102,11 @@ namespace Riemann2D::Viewer
         }
         std::shared_ptr<Render::FramePacket> frame = BuildFrame(input);
         LastSubmittedFrame = frame->FrameId;
+        frame->CapturePath = std::move(NextCapturePath);
+        NextCapturePath.clear();
+        const bool capturing = !frame->CapturePath.empty();
         Renderer.Submit(std::move(frame));
+        if (capturing) Renderer.WaitIdle(LastSubmittedFrame);
     }
 
     std::shared_ptr<Render::FramePacket> Viewer::BuildFrame(const Render::InterfaceInput& input)
@@ -121,13 +144,33 @@ namespace Riemann2D::Viewer
                 RenderFluidSurface = !RenderFluidSurface;
             }
         }
-        Interface.Slider("GRAVITY", Gravity, -20.0f, 0.0f);
-        Interface.Label("SOLVER");
-        if (Interface.Button("SEQUENTIAL", SelectedSolver == 0)) SelectedSolver = 0;
-        if (Interface.Button("LCP", SelectedSolver == 1)) SelectedSolver = 1;
-        Interface.Label("BACKEND");
-        if (Interface.Button("SCALAR CPU", SelectedBackend == 0)) SelectedBackend = 0;
-        if (Interface.Button("SIMD CPU", SelectedBackend == 1)) SelectedBackend = 1;
+        if (SelectedScene == AirScene)
+        {
+            if (Interface.Button(ShowAirVelocity ? "VELOCITY VECTORS: ON" : "VELOCITY VECTORS: OFF", ShowAirVelocity))
+                ShowAirVelocity = !ShowAirVelocity;
+            Interface.Label("LMB: INJECT SMOKE", {0.65f, 0.78f, 0.92f, 1.0f});
+        }
+        if (SelectedScene != AirScene) Interface.Slider("GRAVITY", Gravity, -20.0f, 0.0f);
+        if (Fluid || Air)
+        {
+            BuildSimulationBackendUI();
+            if (Fluid)
+            {
+                if (Interface.Button(SelectedSolver == 0 ? "BODY SOLVER: SEQUENTIAL" : "BODY SOLVER: LCP"))
+                    SelectedSolver = 1 - SelectedSolver;
+                if (Interface.Button(SelectedBackend == 0 ? "BODY CPU: SCALAR" : "BODY CPU: SIMD"))
+                    SelectedBackend = 1 - SelectedBackend;
+            }
+        }
+        else
+        {
+            Interface.Label("SOLVER");
+            if (Interface.Button("SEQUENTIAL", SelectedSolver == 0)) SelectedSolver = 0;
+            if (Interface.Button("LCP", SelectedSolver == 1)) SelectedSolver = 1;
+            Interface.Label("BACKEND");
+            if (Interface.Button("SCALAR CPU", SelectedBackend == 0)) SelectedBackend = 0;
+            if (Interface.Button("SIMD CPU", SelectedBackend == 1)) SelectedBackend = 1;
+        }
         Interface.Label("DX11 METAL RHI", {0.48f, 0.55f, 0.68f, 1.0f});
 
         frame->WorldDraws.push_back(BuildGridDraw());
@@ -135,7 +178,7 @@ namespace Riemann2D::Viewer
         {
             FluidSurfaceDraw surface = BuildFluidSurfaceDraw(*Fluid);
             frame->WorldDraws.push_back(std::move(surface.Fill));
-            frame->WorldDraws.push_back(std::move(surface.Outline));
+            if (!surface.Outline.Vertices.empty()) frame->WorldDraws.push_back(std::move(surface.Outline));
         }
         else if (Fluid)
         {
@@ -150,9 +193,54 @@ namespace Riemann2D::Viewer
             }
             frame->WorldDraws.push_back(std::move(particles));
         }
+        if (Air) frame->WorldDraws.push_back(BuildSmokeDraw(*Air));
         frame->WorldDraws.push_back(BuildWorldDraw());
         frame->UserInterfaceDraws.push_back(Interface.End());
         return frame;
+    }
+
+    FluidComputeBackend Viewer::GetSimulationBackend() const
+    {
+        return Fluid ? Fluid->GetBackend() : Air ? Air->GetBackend() : FluidComputeBackend::CPU;
+    }
+
+    void Viewer::BuildSimulationBackendUI()
+    {
+        Interface.Label(Fluid ? "LIQUID SOLVER BACKEND" : "SMOKE SOLVER BACKEND");
+        const auto select = [&](FluidComputeBackend backend) {
+            const bool selected = Fluid ? Fluid->SetBackend(backend) : Air->SetBackend(backend);
+            if (selected)
+            {
+                (Fluid ? PreferredFluidBackend : PreferredAirBackend) = backend;
+                SimulationMilliseconds = 0.0f;
+            }
+        };
+        if (Interface.Button("CPU", GetSimulationBackend() == FluidComputeBackend::CPU)) select(FluidComputeBackend::CPU);
+        const auto& cuda = GetCudaBackendInfo();
+        if (Interface.Button(cuda.Available ? "CUDA" : "CUDA: UNAVAILABLE",
+            GetSimulationBackend() == FluidComputeBackend::CUDA, cuda.Available)) select(FluidComputeBackend::CUDA);
+        const auto& compute = GetComputeShaderBackendInfo();
+        const std::string computeLabel = compute.Available ? "COMPUTE SHADER: " + compute.API : "COMPUTE: UNAVAILABLE";
+        if (Interface.Button(computeLabel, GetSimulationBackend() == FluidComputeBackend::ComputeShader, compute.Available))
+            select(FluidComputeBackend::ComputeShader);
+        std::string device = GetSimulationBackend() == FluidComputeBackend::ComputeShader ? compute.DeviceName :
+            GetSimulationBackend() == FluidComputeBackend::CUDA ? cuda.DeviceName : "CPU ACTIVE";
+        for (const std::string prefix : {std::string("NVIDIA "), std::string("GeForce ")})
+            if (device.compare(0, prefix.size(), prefix) == 0) device.erase(0, prefix.size());
+        const std::string& error = Fluid ? Fluid->GetBackendError() : Air->GetBackendError();
+        if (!error.empty())
+        {
+            Interface.Label(GetSimulationBackend() == FluidComputeBackend::CPU ? "CPU FALLBACK" : "BACKEND ERROR",
+                            {1.0f, 0.64f, 0.3f, 1.0f});
+            Interface.Label(error.substr(0, 25), {1.0f, 0.64f, 0.3f, 1.0f});
+        }
+        else
+        {
+            Interface.Label(device.substr(0, 25), {0.48f, 0.65f, 0.78f, 1.0f});
+            char timing[48];
+            std::snprintf(timing, sizeof(timing), "SOLVE: %.2F MS", SimulationMilliseconds);
+            Interface.Label(timing);
+        }
     }
 
     Render::DrawPacket Viewer::BuildWorldDraw() const
@@ -216,20 +304,6 @@ namespace Riemann2D::Viewer
             }
         }
 
-        if (Air)
-        {
-            const Vector2 halfCell = 0.5f * Vector2{
-                (Air->GetBoundsMaximum().X - Air->GetBoundsMinimum().X) / static_cast<float>(Air->GetWidth()),
-                (Air->GetBoundsMaximum().Y - Air->GetBoundsMinimum().Y) / static_cast<float>(Air->GetHeight())};
-            for (int y = 0; y < Air->GetHeight(); ++y)
-                for (int x = 0; x < Air->GetWidth(); ++x)
-                {
-                    const float density = Clamp(Air->GetDensity(x, y), 0.0f, 1.0f);
-                    if (density > 0.015f)
-                        AddSolidBox(solid, Air->GetCellCenter(x, y), halfCell, 0.0f,
-                                    {0.25f, 0.7f, 0.9f, 0.5f * density});
-                }
-        }
         if (Destruction)
         {
             if (!Destruction->IsFractured())
@@ -264,14 +338,15 @@ namespace Riemann2D::Viewer
                         {0.25f, 0.8f, 1.0f, 1.0f});
             }
         }
-        if (Air)
+        if (Air && ShowAirVelocity)
         {
-            for (int y = 1; y < Air->GetHeight(); y += 3)
-                for (int x = 1; x < Air->GetWidth(); x += 3)
+            const int stride = std::max(3, Air->GetWidth() / 32);
+            for (int y = 1; y < Air->GetHeight(); y += stride)
+                for (int x = 1; x < Air->GetWidth(); x += stride)
                 {
                     const Vector2 center = Air->GetCellCenter(x, y);
                     AddLine(grid, center, center + 0.18f * Air->GetVelocity(x, y),
-                            {0.5f, 0.85f, 1.0f, 0.7f});
+                            {0.5f, 0.85f, 1.0f, 0.45f});
                 }
         }
 
@@ -555,13 +630,15 @@ namespace Riemann2D::Viewer
         if (SelectedScene == FluidScene)
         {
             Fluid = std::make_unique<FluidSimulation2D>();
+            Fluid->SetBackend(PreferredFluidBackend);
+            SimulationMilliseconds = 0.0f;
             FluidTankTransform.Position = {0.0f, 3.5f};
             Fluid->GetSettings().BoundsMinimum = {-6.0f, -5.0f};
             Fluid->GetSettings().BoundsMaximum = {6.0f, 5.0f};
             Fluid->GetSettings().ContainerTransform = FluidTankTransform;
             Fluid->GetSettings().SmoothingRadius = 0.42f;
             Fluid->GetSettings().ParticleRadius = 0.04f;
-            Fluid->CreateBlock({-5.5f, -4.5f}, {5.5f, 0.1f}, 0.38f);
+            Fluid->CreateBlock({-5.5f, -4.5f}, {5.5f, 0.1f}, 0.18f);
 
             RigidBodyDesc2D wall;
             wall.Type = BodyType2D::Static;
@@ -608,6 +685,8 @@ namespace Riemann2D::Viewer
         if (SelectedScene == AirScene)
         {
             Air = std::make_unique<AerodynamicsSimulation2D>();
+            Air->SetBackend(PreferredAirBackend);
+            SimulationMilliseconds = 0.0f;
             Air->Initialize({-7.0f, -2.0f}, {7.0f, 9.0f}, 480, 360);
             return;
         }

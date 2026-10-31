@@ -67,6 +67,21 @@
     <ClCompile Include="F:\src\Riemann2d\Src\Fluid\AerodynamicsSimulation2D.cpp">
       <Filter>Src\Fluid</Filter>
     </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Fluid\Compute\ComputeAirSolver.cpp">
+      <Filter>Src\Fluid\Compute</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Fluid\Compute\ComputeDevice.cpp">
+      <Filter>Src\Fluid\Compute</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Fluid\Compute\ComputeFluidSolver.cpp">
+      <Filter>Src\Fluid\Compute</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Fluid\Compute\DX11ComputeDevice.cpp">
+      <Filter>Src\Fluid\Compute</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Fluid\Cuda\CudaBackend.cpp">
+      <Filter>Src\Fluid\Cuda</Filter>
+    </ClCompile>
     <ClCompile Include="F:\src\Riemann2d\Src\Fluid\FluidRigidCoupling2D.cpp">
       <Filter>Src\Fluid</Filter>
     </ClCompile>
@@ -156,10 +171,37 @@
     <ClInclude Include="F:\src\Riemann2d\Src\Fluid\AerodynamicsSimulation2D.h">
       <Filter>Src\Fluid</Filter>
     </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\Compute\AirComputeShaders.h">
+      <Filter>Src\Fluid\Compute</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\Compute\ComputeDevice.h">
+      <Filter>Src\Fluid\Compute</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\Compute\ComputeShaderSource.h">
+      <Filter>Src\Fluid\Compute</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\Compute\ComputeSolvers.h">
+      <Filter>Src\Fluid\Compute</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\Compute\FluidComputeShaders.h">
+      <Filter>Src\Fluid\Compute</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\Cuda\CudaSolvers.h">
+      <Filter>Src\Fluid\Cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\FluidComputeBackend.h">
+      <Filter>Src\Fluid</Filter>
+    </ClInclude>
     <ClInclude Include="F:\src\Riemann2d\Src\Fluid\FluidRigidCoupling2D.h">
       <Filter>Src\Fluid</Filter>
     </ClInclude>
     <ClInclude Include="F:\src\Riemann2d\Src\Fluid\FluidSimulation2D.h">
+      <Filter>Src\Fluid</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\GpuFluidSolvers.h">
+      <Filter>Src\Fluid</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\ParticleGrid2D.h">
       <Filter>Src\Fluid</Filter>
     </ClInclude>
     <ClInclude Include="F:\src\Riemann2d\Src\Maths\Maths.h">
@@ -176,9 +218,35 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <CustomBuild Include="F:\src\Riemann2d\Build\Win64\CMakeFiles\ac15b920c8717a3400d16b8b53a8f738\CudaFluidSolver.obj.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="F:\src\Riemann2d\Build\Win64\CMakeFiles\ac15b920c8717a3400d16b8b53a8f738\CudaAirSolver.obj.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
     <CustomBuild Include="F:\src\Riemann2d\Build\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
+    <Object Include="F:\src\Riemann2d\Build\Win64\Cuda\Debug\CudaFluidSolver.obj">
+      <Filter>Object Files</Filter>
+    </Object>
+    <Object Include="F:\src\Riemann2d\Build\Win64\Cuda\Debug\CudaAirSolver.obj">
+      <Filter>Object Files</Filter>
+    </Object>
+    <Object Include="F:\src\Riemann2d\Build\Win64\Cuda\Release\CudaFluidSolver.obj">
+      <Filter>Object Files</Filter>
+    </Object>
+    <Object Include="F:\src\Riemann2d\Build\Win64\Cuda\Release\CudaAirSolver.obj">
+      <Filter>Object Files</Filter>
+    </Object>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{B5350CF8-BFB2-38EE-9EF4-0FDDCCE217F4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Object Files">
+      <UniqueIdentifier>{BAADB7CD-F9D2-3AF4-97C1-B172CC0F3E31}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Src">
       <UniqueIdentifier>{9C5B7D53-9FC8-3D4B-B98E-C183139A1F06}</UniqueIdentifier>
     </Filter>
@@ -193,6 +261,12 @@
     </Filter>
     <Filter Include="Src\Fluid">
       <UniqueIdentifier>{F646168E-7274-37BC-ADB6-1564A40BCA8F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Fluid\Compute">
+      <UniqueIdentifier>{35833F0B-40F4-38DC-93DF-E1E0B4B8FB23}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Fluid\Cuda">
+      <UniqueIdentifier>{0F7134C6-E549-3149-A1BC-5953404FD955}</UniqueIdentifier>
     </Filter>
     <Filter Include="Src\Maths">
       <UniqueIdentifier>{7D6DAF36-D789-36C2-A6A4-224C18BDDBA1}</UniqueIdentifier>

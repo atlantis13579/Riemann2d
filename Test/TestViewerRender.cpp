@@ -4,9 +4,43 @@
 #include "Render/ImmediateUI.h"
 #include "Render/Projection.h"
 #include "Render/Renderer2.h"
+#include "FluidSurfaceBuilder.h"
 
 using namespace Riemann2D;
 using namespace Riemann2D::Render;
+
+R2_TEST("Fluid render fields retain isolated droplets and transformed container bounds")
+{
+    FluidSimulation2D fluid;
+    auto& settings = fluid.GetSettings();
+    settings.BoundsMinimum = {-1.0f, -1.0f};
+    settings.BoundsMaximum = {1.0f, 1.0f};
+    settings.ContainerTransform = {{2.0f, 3.0f}, 0.6f};
+    fluid.CreateBlock({0.0f, 0.0f}, {0.0f, 0.0f}, 0.2f);
+    const auto draw = Viewer::BuildFluidSurfaceDraw(fluid).Fill;
+    R2_REQUIRE(draw.Vertices.size() == 4 && draw.Indices.size() == 6);
+    R2_REQUIRE(draw.Field && draw.Field->IsValid());
+    R2_REQUIRE(*std::max_element(draw.Field->Values.begin(), draw.Field->Values.end()) > 0.8f);
+    for (const auto& vertex : draw.Vertices)
+    {
+        const auto local = settings.ContainerTransform.InverseTransformPoint(vertex.Position);
+        R2_REQUIRE(std::abs(local.X) < 1.00001f && std::abs(local.Y) < 1.00001f);
+    }
+}
+
+R2_TEST("Smoke render packet owns an immutable density snapshot with constant geometry")
+{
+    AerodynamicsSimulation2D air;
+    air.Initialize({-1.0f, -1.0f}, {1.0f, 1.0f}, 80, 60);
+    air.AddEmitter({0.0f, 0.0f}, 0.5f, 3.0f, {1.0f, 0.0f}, 0.1f);
+    const auto draw = Viewer::BuildSmokeDraw(air);
+    R2_REQUIRE(draw.Vertices.size() == 4 && draw.Indices.size() == 6);
+    R2_REQUIRE(draw.Field && draw.Field->IsValid());
+    R2_REQUIRE(draw.Field->Values == air.GetDensityField());
+    const auto snapshot = draw.Field->Values;
+    air.Clear();
+    R2_REQUIRE(draw.Field->Values == snapshot);
+}
 
 R2_TEST("Render thread owns RHI lifecycle and presents immutable frame")
 {
@@ -62,4 +96,14 @@ R2_TEST("Immediate interface reports a clicked scene button")
     const DrawPacket draw = ui.End();
     R2_REQUIRE(!draw.Vertices.empty());
     R2_REQUIRE(!draw.Indices.empty());
+}
+
+R2_TEST("Immediate interface disabled backend cannot be selected")
+{
+    ImmediateUI ui;
+    InterfaceInput input;
+    input.MouseX = 30; input.MouseY = 30; input.MousePressed = true;
+    ui.Begin(800, 600, 260, input);
+    R2_REQUIRE(!ui.Button("CUDA UNAVAILABLE", false, false));
+    R2_REQUIRE(!ui.End().Vertices.empty());
 }

@@ -19,6 +19,7 @@ namespace Riemann2D::Test
 int main(int argc, char** argv)
 {
     int failureCount = 0;
+    int runCount = 0;
     for (const Riemann2D::Test::Case& testCase : Riemann2D::Test::Registry())
     {
         if (argc > 1 && std::string(testCase.Name).find(argv[1]) == std::string::npos)
@@ -26,6 +27,7 @@ int main(int argc, char** argv)
             continue;
         }
         std::cout << "[RUN ] " << testCase.Name << '\n' << std::flush;
+        ++runCount;
         try
         {
             testCase.Function();
@@ -38,7 +40,12 @@ int main(int argc, char** argv)
         }
     }
 
-    std::cout << Riemann2D::Test::Registry().size() << " tests, "
+    if (runCount == 0)
+    {
+        std::cerr << "No tests matched the requested filter\n";
+        return 2;
+    }
+    std::cout << runCount << " tests, "
               << failureCount << " failures\n";
     return failureCount == 0 ? 0 : 1;
 }

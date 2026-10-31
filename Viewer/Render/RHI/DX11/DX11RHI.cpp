@@ -1,6 +1,7 @@
 #include "RHI/DX11/DX11RHI.h"
 
 #include "Projection.h"
+#include "FieldShading.h"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -11,6 +12,10 @@
 
 #include <algorithm>
 #include <vector>
+#include <string>
+#include <cstring>
+#include <fstream>
+#include <cstdio>
 
 namespace Riemann2D::Render
 {
@@ -19,15 +24,22 @@ namespace Riemann2D::Render
     namespace
     {
         constexpr char ShaderSource[] = R"(
-            struct VSInput { float2 Position : POSITION; float4 Color : COLOR; };
-            struct PSInput { float4 Position : SV_POSITION; float4 Color : COLOR; };
+            struct VSInput { float2 Position : POSITION; float4 Color : COLOR; float2 UV : TEXCOORD; };
+            struct PSInput { float4 Position : SV_POSITION; float4 Color : COLOR; float2 UV : TEXCOORD; };
             PSInput VSMain(VSInput input) {
                 PSInput output;
                 output.Position = float4(input.Position, 0.0, 1.0);
                 output.Color = input.Color;
+                output.UV = input.UV;
                 return output;
             }
             float4 PSMain(PSInput input) : SV_TARGET { return input.Color; }
+            Texture2D<float> ScalarTexture : register(t0);
+            SamplerState LinearSampler : register(s0);
+            cbuffer FieldConstants : register(b0) { float4 parameters; };
+            #define SAMPLE_FIELD(coordinate) ScalarTexture.Sample(LinearSampler, coordinate)
+            float4 PSField(PSInput input) : SV_TARGET {
+                float2 uv = input.UV;
         )";
 
         struct GPUVertex
@@ -38,6 +50,8 @@ namespace Riemann2D::Render
             float G;
             float B;
             float A;
+            float U;
+            float V;
         };
 
         class DX11RHI final : public IRHI
@@ -51,6 +65,8 @@ namespace Riemann2D::Render
         private:
             bool CreateRenderTarget();
             bool CreatePipeline();
+            bool BindField(const ScalarField& field);
+            void Capture(const std::string& path);
             bool EnsureBuffers(std::size_t vertexCount, std::size_t indexCount);
             void DrawPackets(const std::vector<DrawPacket>& packets, const FramePacket& frame, bool interfaceSpace);
 
@@ -60,6 +76,13 @@ namespace Riemann2D::Render
             ComPtr<ID3D11RenderTargetView> RenderTarget;
             ComPtr<ID3D11VertexShader> VertexShader;
             ComPtr<ID3D11PixelShader> PixelShader;
+            ComPtr<ID3D11PixelShader> FieldPixelShader;
+            ComPtr<ID3D11Texture2D> FieldTexture;
+            ComPtr<ID3D11ShaderResourceView> FieldView;
+            ComPtr<ID3D11SamplerState> FieldSampler;
+            ComPtr<ID3D11Buffer> FieldConstants;
+            int FieldWidth = 0;
+            int FieldHeight = 0;
             ComPtr<ID3D11InputLayout> InputLayout;
             ComPtr<ID3D11BlendState> BlendState;
             ComPtr<ID3D11RasterizerState> RasterizerState;
@@ -126,32 +149,49 @@ namespace Riemann2D::Render
 
         bool DX11RHI::CreatePipeline()
         {
+            const std::string shader = std::string(ShaderSource) + FieldShading + "}";
+            ComPtr<ID3DBlob> fieldCode;
             ComPtr<ID3DBlob> vertexCode;
             ComPtr<ID3DBlob> pixelCode;
             ComPtr<ID3DBlob> errors;
-            if (FAILED(D3DCompile(ShaderSource, sizeof(ShaderSource), nullptr, nullptr, nullptr, "VSMain", "vs_5_0",
+            if (FAILED(D3DCompile(shader.data(), shader.size(), nullptr, nullptr, nullptr, "VSMain", "vs_5_0",
                                   0, 0, &vertexCode, &errors)) ||
-                FAILED(D3DCompile(ShaderSource, sizeof(ShaderSource), nullptr, nullptr, nullptr, "PSMain", "ps_5_0",
-                                  0, 0, &pixelCode, &errors)))
+                FAILED(D3DCompile(shader.data(), shader.size(), nullptr, nullptr, nullptr, "PSMain", "ps_5_0",
+                                  0, 0, &pixelCode, &errors)) ||
+                FAILED(D3DCompile(shader.data(), shader.size(), nullptr, nullptr, nullptr, "PSField", "ps_5_0",
+                                  D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &fieldCode, &errors)))
             {
+                if (errors) std::fputs(static_cast<const char*>(errors->GetBufferPointer()), stderr);
                 return false;
             }
             if (FAILED(Device->CreateVertexShader(vertexCode->GetBufferPointer(), vertexCode->GetBufferSize(),
                                                   nullptr, &VertexShader)) ||
                 FAILED(Device->CreatePixelShader(pixelCode->GetBufferPointer(), pixelCode->GetBufferSize(),
-                                                 nullptr, &PixelShader)))
+                                                 nullptr, &PixelShader)) ||
+                FAILED(Device->CreatePixelShader(fieldCode->GetBufferPointer(), fieldCode->GetBufferSize(),
+                                                 nullptr, &FieldPixelShader)))
             {
                 return false;
             }
             const D3D11_INPUT_ELEMENT_DESC elements[] = {
                 {"POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-                {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 8, D3D11_INPUT_PER_VERTEX_DATA, 0}
+                {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 8, D3D11_INPUT_PER_VERTEX_DATA, 0},
+                {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0}
             };
-            if (FAILED(Device->CreateInputLayout(elements, 2, vertexCode->GetBufferPointer(),
+            if (FAILED(Device->CreateInputLayout(elements, 3, vertexCode->GetBufferPointer(),
                                                  vertexCode->GetBufferSize(), &InputLayout)))
             {
                 return false;
             }
+            D3D11_SAMPLER_DESC sampler{};
+            sampler.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+            sampler.AddressU = sampler.AddressV = sampler.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+            sampler.MaxLOD = D3D11_FLOAT32_MAX;
+            if (FAILED(Device->CreateSamplerState(&sampler, &FieldSampler))) return false;
+            D3D11_BUFFER_DESC constants{};
+            constants.ByteWidth = 16; constants.Usage = D3D11_USAGE_DYNAMIC;
+            constants.BindFlags = D3D11_BIND_CONSTANT_BUFFER; constants.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+            if (FAILED(Device->CreateBuffer(&constants, nullptr, &FieldConstants))) return false;
             D3D11_BLEND_DESC blend{};
             blend.RenderTarget[0].BlendEnable = TRUE;
             blend.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
@@ -188,6 +228,41 @@ namespace Riemann2D::Render
             {
                 CreateRenderTarget();
             }
+        }
+
+        bool DX11RHI::BindField(const ScalarField& field)
+        {
+            if (!field.IsValid()) return false;
+            ID3D11ShaderResourceView* empty = nullptr;
+            Context->PSSetShaderResources(0, 1, &empty);
+            if (!FieldTexture || FieldWidth != field.Width || FieldHeight != field.Height)
+            {
+                FieldView.Reset(); FieldTexture.Reset();
+                D3D11_TEXTURE2D_DESC description{};
+                description.Width = static_cast<UINT>(field.Width); description.Height = static_cast<UINT>(field.Height);
+                description.MipLevels = 1; description.ArraySize = 1; description.SampleDesc.Count = 1;
+                description.Format = DXGI_FORMAT_R32_FLOAT; description.Usage = D3D11_USAGE_DYNAMIC;
+                description.BindFlags = D3D11_BIND_SHADER_RESOURCE; description.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+                if (FAILED(Device->CreateTexture2D(&description, nullptr, &FieldTexture)) ||
+                    FAILED(Device->CreateShaderResourceView(FieldTexture.Get(), nullptr, &FieldView))) return false;
+                FieldWidth = field.Width; FieldHeight = field.Height;
+            }
+            D3D11_MAPPED_SUBRESOURCE mapping{};
+            if (FAILED(Context->Map(FieldTexture.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapping))) return false;
+            for (int y = 0; y < field.Height; ++y)
+                std::memcpy(static_cast<char*>(mapping.pData) + y * mapping.RowPitch,
+                            field.Values.data() + y * field.Width, field.Width * sizeof(float));
+            Context->Unmap(FieldTexture.Get(), 0);
+            if (FAILED(Context->Map(FieldConstants.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapping))) return false;
+            const float values[4] = {1.0f / field.Width, 1.0f / field.Height,
+                                    static_cast<float>(field.Material), field.Rotation};
+            std::memcpy(mapping.pData, values, sizeof(values));
+            Context->Unmap(FieldConstants.Get(), 0);
+            Context->PSSetShader(FieldPixelShader.Get(), nullptr, 0);
+            Context->PSSetShaderResources(0, 1, FieldView.GetAddressOf());
+            Context->PSSetSamplers(0, 1, FieldSampler.GetAddressOf());
+            Context->PSSetConstantBuffers(0, 1, FieldConstants.GetAddressOf());
+            return true;
         }
 
         bool DX11RHI::EnsureBuffers(std::size_t vertexCount, std::size_t indexCount)
@@ -242,7 +317,7 @@ namespace Riemann2D::Render
                     const Vertex& source = packet.Vertices[index];
                     const Vector2 clip = interfaceSpace ? ProjectInterfaceToClip(source.Position, frame)
                                                         : ProjectWorldToClip(source.Position, frame);
-                    vertices[index] = {clip.X, clip.Y, source.Tint.R, source.Tint.G, source.Tint.B, source.Tint.A};
+                    vertices[index] = {clip.X, clip.Y, source.Tint.R, source.Tint.G, source.Tint.B, source.Tint.A, source.TexCoord.X, source.TexCoord.Y};
                 }
                 std::copy(packet.Indices.begin(), packet.Indices.end(), static_cast<std::uint32_t*>(indexMap.pData));
                 Context->Unmap(VertexBuffer.Get(), 0);
@@ -254,6 +329,11 @@ namespace Riemann2D::Render
                 Context->IASetIndexBuffer(IndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
                 Context->IASetPrimitiveTopology(packet.Topology == PrimitiveTopology::Lines
                     ? D3D11_PRIMITIVE_TOPOLOGY_LINELIST : D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+                if (packet.Field)
+                {
+                    if (!BindField(*packet.Field)) continue;
+                }
+                else Context->PSSetShader(PixelShader.Get(), nullptr, 0);
                 Context->DrawIndexed(static_cast<UINT>(packet.Indices.size()), 0, 0);
             }
         }
@@ -277,7 +357,34 @@ namespace Riemann2D::Render
             Context->OMSetBlendState(BlendState.Get(), blendFactor, 0xffffffffu);
             DrawPackets(frame.WorldDraws, frame, false);
             DrawPackets(frame.UserInterfaceDraws, frame, true);
+            if (!frame.CapturePath.empty()) Capture(frame.CapturePath);
             SwapChain->Present(1, 0);
+        }
+
+        void DX11RHI::Capture(const std::string& path)
+        {
+            ComPtr<ID3D11Texture2D> buffer;
+            if (FAILED(SwapChain->GetBuffer(0, IID_PPV_ARGS(&buffer)))) return;
+            D3D11_TEXTURE2D_DESC description{};
+            buffer->GetDesc(&description);
+            description.Usage = D3D11_USAGE_STAGING;
+            description.BindFlags = 0;
+            description.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+            ComPtr<ID3D11Texture2D> staging;
+            if (FAILED(Device->CreateTexture2D(&description, nullptr, &staging))) return;
+            Context->CopyResource(staging.Get(), buffer.Get());
+            D3D11_MAPPED_SUBRESOURCE mapping{};
+            if (FAILED(Context->Map(staging.Get(), 0, D3D11_MAP_READ, 0, &mapping))) return;
+            std::ofstream output(path, std::ios::binary);
+            output << "P6\n" << Width << " " << Height << "\n255\n";
+            std::vector<char> row(static_cast<std::size_t>(Width * 3));
+            for (int y = 0; y < Height; ++y)
+            {
+                const auto* source = static_cast<const char*>(mapping.pData) + y * mapping.RowPitch;
+                for (int x = 0; x < Width; ++x) std::memcpy(row.data() + x * 3, source + x * 4, 3);
+                output.write(row.data(), static_cast<std::streamsize>(row.size()));
+            }
+            Context->Unmap(staging.Get(), 0);
         }
 
         void DX11RHI::Shutdown()
@@ -285,6 +392,8 @@ namespace Riemann2D::Render
             if (Context) Context->ClearState();
             IndexBuffer.Reset(); VertexBuffer.Reset(); RasterizerState.Reset();
             BlendState.Reset(); InputLayout.Reset();
+            FieldConstants.Reset(); FieldSampler.Reset(); FieldView.Reset(); FieldTexture.Reset();
+            FieldPixelShader.Reset(); FieldWidth = FieldHeight = 0;
             PixelShader.Reset(); VertexShader.Reset(); RenderTarget.Reset(); SwapChain.Reset();
             Context.Reset(); Device.Reset();
         }

@@ -7,8 +7,68 @@
 
 #include <cmath>
 #include <memory>
+#include <set>
 
 using namespace Riemann2D;
+
+R2_TEST("Fluid spatial grid matches brute force across negative cells and hash collisions")
+{
+    std::vector<FluidParticle2D> particles;
+    for (int i = 0; i < 1200; ++i)
+        particles.push_back({{std::sin(static_cast<float>(i) * 1.7f) * 12.0f,
+                              std::cos(static_cast<float>(i) * 0.7f) * 12.0f}});
+    ParticleGrid2D grid;
+    grid.Build(particles, 0.37f);
+    for (std::size_t i = 0; i < particles.size(); i += 13)
+    {
+        std::set<std::size_t> expected;
+        std::set<std::size_t> actual;
+        constexpr float radius = 0.81f;
+        for (std::size_t j = 0; j < particles.size(); ++j)
+            if ((particles[j].Position - particles[i].Position).SquareLength() < radius * radius)
+                expected.insert(j);
+        grid.Query(particles[i].Position, radius, [&](std::size_t j) {
+            if ((particles[j].Position - particles[i].Position).SquareLength() < radius * radius)
+                R2_REQUIRE(actual.insert(j).second);
+        });
+        R2_REQUIRE(expected == actual);
+    }
+}
+
+R2_TEST("Fluid density constraints preserve a resting block without artificial expansion")
+{
+    FluidSimulation2D fluid;
+    fluid.GetSettings().Gravity = Vector2::Zero();
+    fluid.CreateBlock({-2.0f, 0.0f}, {2.0f, 4.0f}, 0.16f);
+    const auto initial = fluid.GetParticles();
+    for (int step = 0; step < 120; ++step) fluid.Step(1.0f / 60.0f);
+    for (std::size_t i = 0; i < initial.size(); ++i)
+    {
+        R2_REQUIRE((fluid.GetParticles()[i].Position - initial[i].Position).Length() < 0.02f);
+        R2_REQUIRE(fluid.GetParticles()[i].Density < fluid.GetKernelRestDensity() * 1.03f);
+    }
+    fluid.Clear();
+    R2_REQUIRE(fluid.SampleOccupancy({0.0f, 1.0f}) == 0.0f);
+}
+
+R2_TEST("Fluid settled pool remains finite with bounded compression")
+{
+    FluidSimulation2D fluid;
+    fluid.GetSettings().BoundsMinimum = {-2.0f, -1.0f};
+    fluid.GetSettings().BoundsMaximum = {2.0f, 5.0f};
+    fluid.CreateBlock({-1.8f, 0.0f}, {1.8f, 2.8f}, 0.18f);
+    for (int step = 0; step < 360; ++step) fluid.Step(1.0f / 60.0f);
+    float meanDensity = 0.0f;
+    for (const auto& particle : fluid.GetParticles())
+    {
+        R2_REQUIRE(std::isfinite(particle.Velocity.SquareLength()));
+        R2_REQUIRE(particle.Velocity.Length() < 15.0f);
+        meanDensity += particle.Density;
+    }
+    meanDensity /= static_cast<float>(fluid.GetParticles().size());
+    R2_REQUIRE(meanDensity < fluid.GetKernelRestDensity() * 1.15f);
+    R2_REQUIRE(meanDensity > fluid.GetKernelRestDensity() * 0.8f);
+}
 
 R2_TEST("Fluid particles fall under gravity and remain inside bounds")
 {

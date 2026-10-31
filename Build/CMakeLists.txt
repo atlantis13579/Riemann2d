@@ -22,7 +22,8 @@ else()
     set(RIEMANN2D_PLATFORM_NAME Linux)
 endif()
 
-set(RIEMANN2D_OUTPUT_DIRECTORY "${RIEMANN2D_ROOT_DIR}/Binaries/${RIEMANN2D_PLATFORM_NAME}")
+set(RIEMANN2D_OUTPUT_DIRECTORY "${RIEMANN2D_ROOT_DIR}/Binaries/${RIEMANN2D_PLATFORM_NAME}"
+    CACHE PATH "Build output directory")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${RIEMANN2D_OUTPUT_DIRECTORY}")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${RIEMANN2D_OUTPUT_DIRECTORY}")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${RIEMANN2D_OUTPUT_DIRECTORY}")
@@ -56,6 +57,75 @@ file(GLOB_RECURSE RIEMANN2D_HEADERS CONFIGURE_DEPENDS
 add_library(Riemann2D STATIC ${RIEMANN2D_SOURCES} ${RIEMANN2D_HEADERS})
 target_include_directories(Riemann2D PUBLIC "${RIEMANN2D_ROOT_DIR}/Src")
 target_compile_features(Riemann2D PUBLIC cxx_std_17)
+
+option(RIEMANN2D_ENABLE_COMPUTE_SHADER "Build native DX11/Metal compute fluid solvers" ON)
+if(RIEMANN2D_ENABLE_COMPUTE_SHADER)
+    if(WIN32)
+        target_compile_definitions(Riemann2D PRIVATE RIEMANN2D_HAS_COMPUTE_SHADER=1)
+        target_link_libraries(Riemann2D PRIVATE d3d11 d3dcompiler dxgi)
+    elseif(APPLE)
+        enable_language(OBJCXX)
+        target_sources(Riemann2D PRIVATE "${RIEMANN2D_ROOT_DIR}/Src/Fluid/Compute/MetalComputeDevice.mm")
+        set_property(TARGET Riemann2D PROPERTY OBJCXX_STANDARD 17)
+        set_source_files_properties("${RIEMANN2D_ROOT_DIR}/Src/Fluid/Compute/MetalComputeDevice.mm"
+            PROPERTIES COMPILE_FLAGS "-fobjc-arc")
+        target_compile_definitions(Riemann2D PRIVATE RIEMANN2D_HAS_COMPUTE_SHADER=1)
+        find_library(COMPUTE_METAL_FRAMEWORK Metal REQUIRED)
+        find_library(COMPUTE_FOUNDATION_FRAMEWORK Foundation REQUIRED)
+        target_link_libraries(Riemann2D PRIVATE ${COMPUTE_METAL_FRAMEWORK} ${COMPUTE_FOUNDATION_FRAMEWORK})
+    endif()
+endif()
+
+option(RIEMANN2D_ENABLE_CUDA "Build optional CUDA fluid solvers when a toolkit is available" ON)
+set(RIEMANN2D_CUDA_ARCHITECTURES "75;86" CACHE STRING "CUDA real and virtual architectures")
+if(RIEMANN2D_ENABLE_CUDA AND NOT APPLE)
+    find_package(CUDAToolkit QUIET)
+    if(CUDAToolkit_FOUND AND CUDAToolkit_NVCC_EXECUTABLE)
+        # Compile with nvcc directly so standalone toolkits do not need VS build customizations.
+        set(cuda_architecture_flags)
+        foreach(architecture IN LISTS RIEMANN2D_CUDA_ARCHITECTURES)
+            list(APPEND cuda_architecture_flags
+                "--generate-code=arch=compute_${architecture},code=[sm_${architecture},compute_${architecture}]")
+        endforeach()
+        set(cuda_host_flags)
+        if(MSVC)
+            list(APPEND cuda_host_flags "-Xcompiler=$<IF:$<CONFIG:Debug>,/MDd,/MD>" "-Xcompiler=/EHsc")
+        else()
+            list(APPEND cuda_host_flags "-Xcompiler=-fPIC")
+        endif()
+        foreach(cuda_source CudaFluidSolver CudaAirSolver)
+            set(cuda_object "${CMAKE_CURRENT_BINARY_DIR}/Cuda/$<CONFIG>/${cuda_source}${CMAKE_CXX_OUTPUT_EXTENSION}")
+            add_custom_command(OUTPUT "${cuda_object}"
+                COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/Cuda/$<CONFIG>"
+                COMMAND "${CUDAToolkit_NVCC_EXECUTABLE}" --std=c++17 -O3 --fmad=false
+                    ${cuda_architecture_flags} ${cuda_host_flags} -ccbin "${CMAKE_CXX_COMPILER}"
+                    "-I${RIEMANN2D_ROOT_DIR}/Src" -c "${RIEMANN2D_ROOT_DIR}/Src/Fluid/Cuda/${cuda_source}.cu"
+                    -o "${cuda_object}"
+                DEPENDS "${RIEMANN2D_ROOT_DIR}/Src/Fluid/Cuda/${cuda_source}.cu"
+                    ${RIEMANN2D_HEADERS}
+                    "${RIEMANN2D_ROOT_DIR}/Src/Fluid/Cuda/CudaCommon.cuh"
+                    "${RIEMANN2D_ROOT_DIR}/Src/Fluid/Cuda/CudaSolvers.h"
+                    "${RIEMANN2D_ROOT_DIR}/Src/Fluid/FluidSimulation2D.h"
+                    "${RIEMANN2D_ROOT_DIR}/Src/Fluid/AerodynamicsSimulation2D.h"
+                VERBATIM)
+            set_source_files_properties("${cuda_object}" PROPERTIES GENERATED TRUE EXTERNAL_OBJECT TRUE)
+            target_sources(Riemann2D PRIVATE "${cuda_object}")
+        endforeach()
+        target_compile_definitions(Riemann2D PRIVATE RIEMANN2D_HAS_CUDA=1)
+        target_link_libraries(Riemann2D PRIVATE CUDA::cudart_static)
+        message(STATUS "Riemann2D CUDA solvers enabled (${CUDAToolkit_VERSION})")
+    else()
+        message(STATUS "CUDA compiler/toolkit not found; building CPU fluid solvers")
+    endif()
+endif()
+
+option(RIEMANN2D_PARALLEL_FLUIDS "Parallelize large fluid grids when OpenMP is available" ON)
+if(RIEMANN2D_PARALLEL_FLUIDS)
+    find_package(OpenMP QUIET)
+    if(OpenMP_CXX_FOUND)
+        target_link_libraries(Riemann2D PUBLIC OpenMP::OpenMP_CXX)
+    endif()
+endif()
 
 set(RIEMANN2D_VIEWER_RENDER_SOURCES
     "${RIEMANN2D_ROOT_DIR}/Viewer/Render/ImmediateUI.cpp"
@@ -156,6 +226,7 @@ if(RIEMANN2D_BUILD_TESTS)
     add_executable(Riemann2DTests
         ${RIEMANN2D_TEST_SOURCES}
         ${RIEMANN2D_VIEWER_RENDER_SOURCES}
+        "${RIEMANN2D_ROOT_DIR}/Viewer/FluidSurfaceBuilder.cpp"
     )
     target_include_directories(Riemann2DTests PRIVATE
         "${RIEMANN2D_ROOT_DIR}/Test"
@@ -176,4 +247,30 @@ source_group(TREE "${RIEMANN2D_ROOT_DIR}/Viewer" PREFIX "Viewer"
 if(DEFINED RIEMANN2D_TEST_SOURCES)
     source_group(TREE "${RIEMANN2D_ROOT_DIR}/Test" PREFIX "Test"
         FILES ${RIEMANN2D_TEST_SOURCES})
+endif()
+
+option(RIEMANN2D_BUILD_BENCHMARKS "Build repeatable fluid benchmarks" ON)
+if(RIEMANN2D_BUILD_BENCHMARKS)
+    add_executable(FluidBenchmark
+        "${RIEMANN2D_ROOT_DIR}/Tools/FluidBenchmark.cpp"
+        "${RIEMANN2D_ROOT_DIR}/Viewer/FluidSurfaceBuilder.cpp"
+        "${RIEMANN2D_ROOT_DIR}/Viewer/GeometryBuilder.cpp")
+    target_include_directories(FluidBenchmark PRIVATE "${RIEMANN2D_ROOT_DIR}/Viewer")
+    target_link_libraries(FluidBenchmark PRIVATE Riemann2D)
+    if(WIN32)
+        add_executable(FluidPreview
+            "${RIEMANN2D_ROOT_DIR}/Tools/FluidPreview.cpp"
+            "${RIEMANN2D_ROOT_DIR}/Viewer/FluidSurfaceBuilder.cpp"
+            "${RIEMANN2D_ROOT_DIR}/Viewer/GeometryBuilder.cpp"
+            "${RIEMANN2D_ROOT_DIR}/Viewer/Render/RHI/DX11/DX11RHI.cpp")
+        target_include_directories(FluidPreview PRIVATE
+            "${RIEMANN2D_ROOT_DIR}/Viewer" "${RIEMANN2D_ROOT_DIR}/Viewer/Render")
+        target_link_libraries(FluidPreview PRIVATE Riemann2D user32 d3d11 d3dcompiler dxgi)
+        add_executable(ViewerBackendPreview
+            "${RIEMANN2D_ROOT_DIR}/Tools/ViewerBackendPreview.cpp"
+            ${RIEMANN2D_VIEWER_COMMON_SOURCES} ${RIEMANN2D_VIEWER_PLATFORM_SOURCES})
+        target_include_directories(ViewerBackendPreview PRIVATE
+            "${RIEMANN2D_ROOT_DIR}/Viewer" "${RIEMANN2D_ROOT_DIR}/Viewer/Render")
+        target_link_libraries(ViewerBackendPreview PRIVATE Riemann2D Threads::Threads user32 d3d11 d3dcompiler dxgi)
+    endif()
 endif()

@@ -22,6 +22,8 @@ namespace Riemann2D::Viewer
         void Resize(int width, int height);
         void Tick(float deltaTime, const Render::InterfaceInput& input);
         void Shutdown();
+        void CaptureNextFrame(const std::string& path) { NextCapturePath = path; }
+        FluidComputeBackend GetSimulationBackend() const;
 
     private:
         enum SceneIndex
@@ -56,6 +58,7 @@ namespace Riemann2D::Viewer
         RigidBody2D* PickFluidBody(const Vector2& worldPosition) const;
         void UpdateFluidTankTransform();
         void ConfineFluidBodiesToTank();
+        void BuildSimulationBackendUI();
 
         Render::Renderer2 Renderer;
         Render::ImmediateUI Interface;
@@ -68,8 +71,13 @@ namespace Riemann2D::Viewer
         int SelectedSolver = 0;
         int SelectedBackend = 0;
         bool RenderFluidSurface = true;
+        bool ShowAirVelocity = false;
         float Gravity = -9.81f;
         float AnimationTime = 0.0f;
+        float SimulationMilliseconds = 0.0f;
+        FluidComputeBackend PreferredFluidBackend = FluidComputeBackend::CPU;
+        FluidComputeBackend PreferredAirBackend = FluidComputeBackend::CPU;
+        std::string NextCapturePath;
         PhysicsWorld2D World;
         std::unique_ptr<RopeSimulation2D> Rope;
         std::unique_ptr<FluidSimulation2D> Fluid;

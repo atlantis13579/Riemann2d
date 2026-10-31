@@ -1,6 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
+VisualStudioVersion = 17.14.37628.2 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Viewer", "Viewer.vcxproj", "{9F544299-1783-329F-BE98-438800D504C5}"
 	ProjectSection(ProjectDependencies) = postProject
 		{DFA5773F-3B94-3D7D-8D57-9E04C2116109} = {DFA5773F-3B94-3D7D-8D57-9E04C2116109}
@@ -14,12 +16,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ALL_BUILD", "ALL_BUILD.vcxp
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RUN_TESTS", "RUN_TESTS.vcxproj", "{A49438F1-251F-3BE6-8BD2-835CB3281E4E}"
-	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Riemann2D", "Riemann2D.vcxproj", "{DFA5773F-3B94-3D7D-8D57-9E04C2116109}"
-	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Riemann2DTests", "Riemann2DTests.vcxproj", "{9985A783-2147-3B55-A588-6C9BA3CB910B}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -49,9 +47,10 @@ Global
 		{9985A783-2147-3B55-A588-6C9BA3CB910B}.Release|x64.ActiveCfg = Release|x64
 		{9985A783-2147-3B55-A588-6C9BA3CB910B}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7F97F24E-A8F3-35F1-BB1B-7CF4BE5B20E1}
-	EndGlobalSection
-	GlobalSection(ExtensibilityAddIns) = postSolution
 	EndGlobalSection
 EndGlobal

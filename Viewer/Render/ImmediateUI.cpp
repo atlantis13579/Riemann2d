@@ -3,6 +3,7 @@
 #include "Maths/Maths.h"
 
 #include <array>
+#include <algorithm>
 #include <cctype>
 #include <cstdint>
 #include <utility>
@@ -67,24 +68,29 @@ namespace Riemann2D::Render
 
     void ImmediateUI::Label(const std::string& text, const Color& color)
     {
-        AddText(14.0f, CursorY, text, color);
+        const float scale = std::min(2.0f, (static_cast<float>(PanelWidth) - 28.0f) /
+            (6.0f * static_cast<float>(std::max<std::size_t>(text.size(), 1))));
+        AddText(14.0f, CursorY, text, color, scale);
         CursorY += 20.0f;
     }
 
-    bool ImmediateUI::Button(const std::string& text, bool selected)
+    bool ImmediateUI::Button(const std::string& text, bool selected, bool enabled)
     {
         const float left = 12.0f;
         const float top = CursorY;
         const float right = static_cast<float>(PanelWidth - 12);
         const float bottom = top + 28.0f;
-        const bool hovered = IsHovered(left, top, right, bottom);
+        const bool hovered = enabled && IsHovered(left, top, right, bottom);
         Color color = selected ? Color{0.15f, 0.42f, 0.7f, 1.0f} : Color{0.11f, 0.13f, 0.18f, 1.0f};
         if (hovered)
         {
             color = selected ? Color{0.2f, 0.5f, 0.8f, 1.0f} : Color{0.18f, 0.21f, 0.29f, 1.0f};
         }
         AddRectangle(left, top, right, bottom, color);
-        AddText(left + 9.0f, top + 7.0f, text, {0.92f, 0.94f, 0.98f, 1.0f});
+        const float scale = std::min(2.0f, (right - left - 18.0f) /
+            (6.0f * static_cast<float>(std::max<std::size_t>(text.size(), 1))));
+        AddText(left + 9.0f, top + 7.0f, text, enabled ? Color{0.92f, 0.94f, 0.98f, 1.0f}
+                                                     : Color{0.38f, 0.42f, 0.48f, 1.0f}, scale);
         CursorY = bottom + 6.0f;
         return hovered && Input.MousePressed;
     }

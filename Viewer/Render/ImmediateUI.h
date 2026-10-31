@@ -19,7 +19,7 @@ namespace Riemann2D::Render
     public:
         void Begin(int width, int height, int panelWidth, const InterfaceInput& input);
         void Label(const std::string& text, const Color& color = {0.85f, 0.88f, 0.95f, 1.0f});
-        bool Button(const std::string& text, bool selected = false);
+        bool Button(const std::string& text, bool selected = false, bool enabled = true);
         bool Slider(const std::string& text, float& value, float minimum, float maximum);
         DrawPacket End();
 

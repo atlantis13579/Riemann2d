@@ -10,7 +10,19 @@
     <ClCompile Include="F:\src\Riemann2d\Test\TestCollision.cpp">
       <Filter>Test</Filter>
     </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Test\TestComputeAir.cpp">
+      <Filter>Test</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Test\TestComputeFluid.cpp">
+      <Filter>Test</Filter>
+    </ClCompile>
     <ClCompile Include="F:\src\Riemann2d\Test\TestConstraints.cpp">
+      <Filter>Test</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Test\TestCudaAir.cpp">
+      <Filter>Test</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Test\TestCudaFluid.cpp">
       <Filter>Test</Filter>
     </ClCompile>
     <ClCompile Include="F:\src\Riemann2d\Test\TestDestruction.cpp">
@@ -54,6 +66,9 @@
     </ClCompile>
     <ClCompile Include="F:\src\Riemann2d\Viewer\Render\RHI\Null\NullRHI.cpp">
       <Filter>Viewer\Render\RHI\Null</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Viewer\FluidSurfaceBuilder.cpp">
+      <Filter>Viewer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

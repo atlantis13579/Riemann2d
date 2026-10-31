@@ -53,28 +53,30 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>F:\src\Riemann2d\Src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalOptions>%(AdditionalOptions) /Zc:__cplusplus</AdditionalOptions>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "E:/cuda/include" /Zc:__cplusplus</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <ConformanceMode>true</ConformanceMode>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ExceptionHandling>Sync</ExceptionHandling>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <OpenMPSupport>true</OpenMPSupport>
       <Optimization>Disabled</Optimization>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level4</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;RIEMANN2D_HAS_COMPUTE_SHADER=1;RIEMANN2D_HAS_CUDA=1;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>F:\src\Riemann2d\Src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;RIEMANN2D_HAS_COMPUTE_SHADER=1;RIEMANN2D_HAS_CUDA=1;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>F:\src\Riemann2d\Src;E:\cuda\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>F:\src\Riemann2d\Src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>F:\src\Riemann2d\Src;E:\cuda\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -88,28 +90,30 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>F:\src\Riemann2d\Src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalOptions>%(AdditionalOptions) /Zc:__cplusplus</AdditionalOptions>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "E:/cuda/include" /Zc:__cplusplus</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <ConformanceMode>true</ConformanceMode>
       <ExceptionHandling>Sync</ExceptionHandling>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <OpenMPSupport>true</OpenMPSupport>
       <Optimization>MaxSpeed</Optimization>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level4</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR="Release"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;RIEMANN2D_HAS_COMPUTE_SHADER=1;RIEMANN2D_HAS_CUDA=1;CMAKE_INTDIR="Release"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <DebugInformationFormat>
       </DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>F:\src\Riemann2d\Src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;RIEMANN2D_HAS_COMPUTE_SHADER=1;RIEMANN2D_HAS_CUDA=1;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>F:\src\Riemann2d\Src;E:\cuda\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>F:\src\Riemann2d\Src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>F:\src\Riemann2d\Src;E:\cuda\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -120,6 +124,74 @@
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
     </Lib>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="F:\src\Riemann2d\Build\Win64\CMakeFiles\ac15b920c8717a3400d16b8b53a8f738\CudaFluidSolver.obj.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating Cuda/Debug/CudaFluidSolver.obj</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory F:/src/Riemann2d/Build/Win64/Cuda/Debug
+if %errorlevel% neq 0 goto :cmEnd
+E:\cuda\bin\nvcc.exe --std=c++17 -O3 --fmad=false --generate-code=arch=compute_75,code=[sm_75,compute_75] --generate-code=arch=compute_86,code=[sm_86,compute_86] -Xcompiler=/MDd -Xcompiler=/EHsc -ccbin "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe" -IF:/src/Riemann2d/Src -c F:/src/Riemann2d/Src/Fluid/Cuda/CudaFluidSolver.cu -o F:/src/Riemann2d/Build/Win64/Cuda/Debug/CudaFluidSolver.obj
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">F:\src\Riemann2d\Src\Fluid\Cuda\CudaFluidSolver.cu;F:\src\Riemann2d\Src\Collision\AxisAlignedBox2.h;F:\src\Riemann2d\Src\Collision\Box2.h;F:\src\Riemann2d\Src\Collision\Capsule2.h;F:\src\Riemann2d\Src\Collision\Contact2.h;F:\src\Riemann2d\Src\Collision\Convex2.h;F:\src\Riemann2d\Src\Collision\DynamicAABBTree2.h;F:\src\Riemann2d\Src\Collision\GJK2.h;F:\src\Riemann2d\Src\Collision\NarrowPhase2.h;F:\src\Riemann2d\Src\Collision\SAT2.h;F:\src\Riemann2d\Src\Collision\Shape2.h;F:\src\Riemann2d\Src\Collision\Sphere2.h;F:\src\Riemann2d\Src\Collision\StaticAABBTree2.h;F:\src\Riemann2d\Src\Collision\TriangleMesh2.h;F:\src\Riemann2d\Src\Destruction\DestructionCut2D.h;F:\src\Riemann2d\Src\Destruction\DestructionSet2D.h;F:\src\Riemann2d\Src\Dynamics\Constraints2D.h;F:\src\Riemann2d\Src\Dynamics\ContactSolver2D.h;F:\src\Riemann2d\Src\Dynamics\ContactSolverUtilities2D.h;F:\src\Riemann2d\Src\Dynamics\ForceField2D.h;F:\src\Riemann2d\Src\Dynamics\LCPSolver2D.h;F:\src\Riemann2d\Src\Dynamics\LinearAlgebraBackend2D.h;F:\src\Riemann2d\Src\Dynamics\PhysicsWorld2D.h;F:\src\Riemann2d\Src\Dynamics\Ragdoll2D.h;F:\src\Riemann2d\Src\Dynamics\RigidBody2D.h;F:\src\Riemann2d\Src\Dynamics\SequentialImpulseSolver2D.h;F:\src\Riemann2d\Src\Fluid\AerodynamicsSimulation2D.h;F:\src\Riemann2d\Src\Fluid\Compute\AirComputeShaders.h;F:\src\Riemann2d\Src\Fluid\Compute\ComputeDevice.h;F:\src\Riemann2d\Src\Fluid\Compute\ComputeShaderSource.h;F:\src\Riemann2d\Src\Fluid\Compute\ComputeSolvers.h;F:\src\Riemann2d\Src\Fluid\Compute\FluidComputeShaders.h;F:\src\Riemann2d\Src\Fluid\Cuda\CudaSolvers.h;F:\src\Riemann2d\Src\Fluid\FluidComputeBackend.h;F:\src\Riemann2d\Src\Fluid\FluidRigidCoupling2D.h;F:\src\Riemann2d\Src\Fluid\FluidSimulation2D.h;F:\src\Riemann2d\Src\Fluid\GpuFluidSolvers.h;F:\src\Riemann2d\Src\Fluid\ParticleGrid2D.h;F:\src\Riemann2d\Src\Maths\Maths.h;F:\src\Riemann2d\Src\Maths\Transform2.h;F:\src\Riemann2d\Src\Maths\Vector2.h;F:\src\Riemann2d\Src\SoftBody\RopeSimulation2D.h;F:\src\Riemann2d\Src\Fluid\Cuda\CudaCommon.cuh;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">F:\src\Riemann2d\Build\Win64\Cuda\Debug\CudaFluidSolver.obj</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating Cuda/Release/CudaFluidSolver.obj</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory F:/src/Riemann2d/Build/Win64/Cuda/Release
+if %errorlevel% neq 0 goto :cmEnd
+E:\cuda\bin\nvcc.exe --std=c++17 -O3 --fmad=false --generate-code=arch=compute_75,code=[sm_75,compute_75] --generate-code=arch=compute_86,code=[sm_86,compute_86] -Xcompiler=/MD -Xcompiler=/EHsc -ccbin "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe" -IF:/src/Riemann2d/Src -c F:/src/Riemann2d/Src/Fluid/Cuda/CudaFluidSolver.cu -o F:/src/Riemann2d/Build/Win64/Cuda/Release/CudaFluidSolver.obj
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">F:\src\Riemann2d\Src\Fluid\Cuda\CudaFluidSolver.cu;F:\src\Riemann2d\Src\Collision\AxisAlignedBox2.h;F:\src\Riemann2d\Src\Collision\Box2.h;F:\src\Riemann2d\Src\Collision\Capsule2.h;F:\src\Riemann2d\Src\Collision\Contact2.h;F:\src\Riemann2d\Src\Collision\Convex2.h;F:\src\Riemann2d\Src\Collision\DynamicAABBTree2.h;F:\src\Riemann2d\Src\Collision\GJK2.h;F:\src\Riemann2d\Src\Collision\NarrowPhase2.h;F:\src\Riemann2d\Src\Collision\SAT2.h;F:\src\Riemann2d\Src\Collision\Shape2.h;F:\src\Riemann2d\Src\Collision\Sphere2.h;F:\src\Riemann2d\Src\Collision\StaticAABBTree2.h;F:\src\Riemann2d\Src\Collision\TriangleMesh2.h;F:\src\Riemann2d\Src\Destruction\DestructionCut2D.h;F:\src\Riemann2d\Src\Destruction\DestructionSet2D.h;F:\src\Riemann2d\Src\Dynamics\Constraints2D.h;F:\src\Riemann2d\Src\Dynamics\ContactSolver2D.h;F:\src\Riemann2d\Src\Dynamics\ContactSolverUtilities2D.h;F:\src\Riemann2d\Src\Dynamics\ForceField2D.h;F:\src\Riemann2d\Src\Dynamics\LCPSolver2D.h;F:\src\Riemann2d\Src\Dynamics\LinearAlgebraBackend2D.h;F:\src\Riemann2d\Src\Dynamics\PhysicsWorld2D.h;F:\src\Riemann2d\Src\Dynamics\Ragdoll2D.h;F:\src\Riemann2d\Src\Dynamics\RigidBody2D.h;F:\src\Riemann2d\Src\Dynamics\SequentialImpulseSolver2D.h;F:\src\Riemann2d\Src\Fluid\AerodynamicsSimulation2D.h;F:\src\Riemann2d\Src\Fluid\Compute\AirComputeShaders.h;F:\src\Riemann2d\Src\Fluid\Compute\ComputeDevice.h;F:\src\Riemann2d\Src\Fluid\Compute\ComputeShaderSource.h;F:\src\Riemann2d\Src\Fluid\Compute\ComputeSolvers.h;F:\src\Riemann2d\Src\Fluid\Compute\FluidComputeShaders.h;F:\src\Riemann2d\Src\Fluid\Cuda\CudaSolvers.h;F:\src\Riemann2d\Src\Fluid\FluidComputeBackend.h;F:\src\Riemann2d\Src\Fluid\FluidRigidCoupling2D.h;F:\src\Riemann2d\Src\Fluid\FluidSimulation2D.h;F:\src\Riemann2d\Src\Fluid\GpuFluidSolvers.h;F:\src\Riemann2d\Src\Fluid\ParticleGrid2D.h;F:\src\Riemann2d\Src\Maths\Maths.h;F:\src\Riemann2d\Src\Maths\Transform2.h;F:\src\Riemann2d\Src\Maths\Vector2.h;F:\src\Riemann2d\Src\SoftBody\RopeSimulation2D.h;F:\src\Riemann2d\Src\Fluid\Cuda\CudaCommon.cuh;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">F:\src\Riemann2d\Build\Win64\Cuda\Release\CudaFluidSolver.obj</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="F:\src\Riemann2d\Build\Win64\CMakeFiles\ac15b920c8717a3400d16b8b53a8f738\CudaAirSolver.obj.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating Cuda/Debug/CudaAirSolver.obj</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory F:/src/Riemann2d/Build/Win64/Cuda/Debug
+if %errorlevel% neq 0 goto :cmEnd
+E:\cuda\bin\nvcc.exe --std=c++17 -O3 --fmad=false --generate-code=arch=compute_75,code=[sm_75,compute_75] --generate-code=arch=compute_86,code=[sm_86,compute_86] -Xcompiler=/MDd -Xcompiler=/EHsc -ccbin "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe" -IF:/src/Riemann2d/Src -c F:/src/Riemann2d/Src/Fluid/Cuda/CudaAirSolver.cu -o F:/src/Riemann2d/Build/Win64/Cuda/Debug/CudaAirSolver.obj
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">F:\src\Riemann2d\Src\Fluid\Cuda\CudaAirSolver.cu;F:\src\Riemann2d\Src\Collision\AxisAlignedBox2.h;F:\src\Riemann2d\Src\Collision\Box2.h;F:\src\Riemann2d\Src\Collision\Capsule2.h;F:\src\Riemann2d\Src\Collision\Contact2.h;F:\src\Riemann2d\Src\Collision\Convex2.h;F:\src\Riemann2d\Src\Collision\DynamicAABBTree2.h;F:\src\Riemann2d\Src\Collision\GJK2.h;F:\src\Riemann2d\Src\Collision\NarrowPhase2.h;F:\src\Riemann2d\Src\Collision\SAT2.h;F:\src\Riemann2d\Src\Collision\Shape2.h;F:\src\Riemann2d\Src\Collision\Sphere2.h;F:\src\Riemann2d\Src\Collision\StaticAABBTree2.h;F:\src\Riemann2d\Src\Collision\TriangleMesh2.h;F:\src\Riemann2d\Src\Destruction\DestructionCut2D.h;F:\src\Riemann2d\Src\Destruction\DestructionSet2D.h;F:\src\Riemann2d\Src\Dynamics\Constraints2D.h;F:\src\Riemann2d\Src\Dynamics\ContactSolver2D.h;F:\src\Riemann2d\Src\Dynamics\ContactSolverUtilities2D.h;F:\src\Riemann2d\Src\Dynamics\ForceField2D.h;F:\src\Riemann2d\Src\Dynamics\LCPSolver2D.h;F:\src\Riemann2d\Src\Dynamics\LinearAlgebraBackend2D.h;F:\src\Riemann2d\Src\Dynamics\PhysicsWorld2D.h;F:\src\Riemann2d\Src\Dynamics\Ragdoll2D.h;F:\src\Riemann2d\Src\Dynamics\RigidBody2D.h;F:\src\Riemann2d\Src\Dynamics\SequentialImpulseSolver2D.h;F:\src\Riemann2d\Src\Fluid\AerodynamicsSimulation2D.h;F:\src\Riemann2d\Src\Fluid\Compute\AirComputeShaders.h;F:\src\Riemann2d\Src\Fluid\Compute\ComputeDevice.h;F:\src\Riemann2d\Src\Fluid\Compute\ComputeShaderSource.h;F:\src\Riemann2d\Src\Fluid\Compute\ComputeSolvers.h;F:\src\Riemann2d\Src\Fluid\Compute\FluidComputeShaders.h;F:\src\Riemann2d\Src\Fluid\Cuda\CudaSolvers.h;F:\src\Riemann2d\Src\Fluid\FluidComputeBackend.h;F:\src\Riemann2d\Src\Fluid\FluidRigidCoupling2D.h;F:\src\Riemann2d\Src\Fluid\FluidSimulation2D.h;F:\src\Riemann2d\Src\Fluid\GpuFluidSolvers.h;F:\src\Riemann2d\Src\Fluid\ParticleGrid2D.h;F:\src\Riemann2d\Src\Maths\Maths.h;F:\src\Riemann2d\Src\Maths\Transform2.h;F:\src\Riemann2d\Src\Maths\Vector2.h;F:\src\Riemann2d\Src\SoftBody\RopeSimulation2D.h;F:\src\Riemann2d\Src\Fluid\Cuda\CudaCommon.cuh;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">F:\src\Riemann2d\Build\Win64\Cuda\Debug\CudaAirSolver.obj</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating Cuda/Release/CudaAirSolver.obj</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory F:/src/Riemann2d/Build/Win64/Cuda/Release
+if %errorlevel% neq 0 goto :cmEnd
+E:\cuda\bin\nvcc.exe --std=c++17 -O3 --fmad=false --generate-code=arch=compute_75,code=[sm_75,compute_75] --generate-code=arch=compute_86,code=[sm_86,compute_86] -Xcompiler=/MD -Xcompiler=/EHsc -ccbin "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe" -IF:/src/Riemann2d/Src -c F:/src/Riemann2d/Src/Fluid/Cuda/CudaAirSolver.cu -o F:/src/Riemann2d/Build/Win64/Cuda/Release/CudaAirSolver.obj
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">F:\src\Riemann2d\Src\Fluid\Cuda\CudaAirSolver.cu;F:\src\Riemann2d\Src\Collision\AxisAlignedBox2.h;F:\src\Riemann2d\Src\Collision\Box2.h;F:\src\Riemann2d\Src\Collision\Capsule2.h;F:\src\Riemann2d\Src\Collision\Contact2.h;F:\src\Riemann2d\Src\Collision\Convex2.h;F:\src\Riemann2d\Src\Collision\DynamicAABBTree2.h;F:\src\Riemann2d\Src\Collision\GJK2.h;F:\src\Riemann2d\Src\Collision\NarrowPhase2.h;F:\src\Riemann2d\Src\Collision\SAT2.h;F:\src\Riemann2d\Src\Collision\Shape2.h;F:\src\Riemann2d\Src\Collision\Sphere2.h;F:\src\Riemann2d\Src\Collision\StaticAABBTree2.h;F:\src\Riemann2d\Src\Collision\TriangleMesh2.h;F:\src\Riemann2d\Src\Destruction\DestructionCut2D.h;F:\src\Riemann2d\Src\Destruction\DestructionSet2D.h;F:\src\Riemann2d\Src\Dynamics\Constraints2D.h;F:\src\Riemann2d\Src\Dynamics\ContactSolver2D.h;F:\src\Riemann2d\Src\Dynamics\ContactSolverUtilities2D.h;F:\src\Riemann2d\Src\Dynamics\ForceField2D.h;F:\src\Riemann2d\Src\Dynamics\LCPSolver2D.h;F:\src\Riemann2d\Src\Dynamics\LinearAlgebraBackend2D.h;F:\src\Riemann2d\Src\Dynamics\PhysicsWorld2D.h;F:\src\Riemann2d\Src\Dynamics\Ragdoll2D.h;F:\src\Riemann2d\Src\Dynamics\RigidBody2D.h;F:\src\Riemann2d\Src\Dynamics\SequentialImpulseSolver2D.h;F:\src\Riemann2d\Src\Fluid\AerodynamicsSimulation2D.h;F:\src\Riemann2d\Src\Fluid\Compute\AirComputeShaders.h;F:\src\Riemann2d\Src\Fluid\Compute\ComputeDevice.h;F:\src\Riemann2d\Src\Fluid\Compute\ComputeShaderSource.h;F:\src\Riemann2d\Src\Fluid\Compute\ComputeSolvers.h;F:\src\Riemann2d\Src\Fluid\Compute\FluidComputeShaders.h;F:\src\Riemann2d\Src\Fluid\Cuda\CudaSolvers.h;F:\src\Riemann2d\Src\Fluid\FluidComputeBackend.h;F:\src\Riemann2d\Src\Fluid\FluidRigidCoupling2D.h;F:\src\Riemann2d\Src\Fluid\FluidSimulation2D.h;F:\src\Riemann2d\Src\Fluid\GpuFluidSolvers.h;F:\src\Riemann2d\Src\Fluid\ParticleGrid2D.h;F:\src\Riemann2d\Src\Maths\Maths.h;F:\src\Riemann2d\Src\Maths\Transform2.h;F:\src\Riemann2d\Src\Maths\Vector2.h;F:\src\Riemann2d\Src\SoftBody\RopeSimulation2D.h;F:\src\Riemann2d\Src\Fluid\Cuda\CudaCommon.cuh;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">F:\src\Riemann2d\Build\Win64\Cuda\Release\CudaAirSolver.obj</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="F:\src\Riemann2d\Build\CMakeLists.txt">
       <UseUtf8Encoding>Always</UseUtf8Encoding>
@@ -133,7 +205,7 @@ endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
 exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CheckCXXSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CheckIncludeFileCXX.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CheckLibraryExists.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\FindThreads.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Internal\CheckSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Platform\WindowsPaths.cmake;F:\src\Riemann2d\Build\Win64\CMakeFiles\3.24.0-rc2\CMakeCXXCompiler.cmake;F:\src\Riemann2d\Build\Win64\CMakeFiles\3.24.0-rc2\CMakeRCCompiler.cmake;F:\src\Riemann2d\Build\Win64\CMakeFiles\3.24.0-rc2\CMakeSystem.cmake;F:\src\Riemann2d\Build\Win64\CMakeFiles\cmake.verify_globs;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeParseImplicitLinkInfo.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CheckCXXSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CheckIncludeFileCXX.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CheckLibraryExists.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\FindCUDAToolkit.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\FindOpenMP.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\FindThreads.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Internal\CheckSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Platform\WindowsPaths.cmake;F:\src\Riemann2d\Build\Win64\CMakeFiles\3.24.0-rc2\CMakeCXXCompiler.cmake;F:\src\Riemann2d\Build\Win64\CMakeFiles\3.24.0-rc2\CMakeRCCompiler.cmake;F:\src\Riemann2d\Build\Win64\CMakeFiles\3.24.0-rc2\CMakeSystem.cmake;F:\src\Riemann2d\Build\Win64\CMakeFiles\cmake.verify_globs;%(AdditionalInputs)</AdditionalInputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">F:\src\Riemann2d\Build\Win64\CMakeFiles\generate.stamp</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule F:/src/Riemann2d/Build/CMakeLists.txt</Message>
@@ -146,7 +218,7 @@ endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
 exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CheckCXXSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CheckIncludeFileCXX.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CheckLibraryExists.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\FindThreads.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Internal\CheckSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Platform\WindowsPaths.cmake;F:\src\Riemann2d\Build\Win64\CMakeFiles\3.24.0-rc2\CMakeCXXCompiler.cmake;F:\src\Riemann2d\Build\Win64\CMakeFiles\3.24.0-rc2\CMakeRCCompiler.cmake;F:\src\Riemann2d\Build\Win64\CMakeFiles\3.24.0-rc2\CMakeSystem.cmake;F:\src\Riemann2d\Build\Win64\CMakeFiles\cmake.verify_globs;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeParseImplicitLinkInfo.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CheckCXXSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CheckIncludeFileCXX.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\CheckLibraryExists.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\FindCUDAToolkit.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\FindOpenMP.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\FindThreads.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Internal\CheckSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-3.24\Modules\Platform\WindowsPaths.cmake;F:\src\Riemann2d\Build\Win64\CMakeFiles\3.24.0-rc2\CMakeCXXCompiler.cmake;F:\src\Riemann2d\Build\Win64\CMakeFiles\3.24.0-rc2\CMakeRCCompiler.cmake;F:\src\Riemann2d\Build\Win64\CMakeFiles\3.24.0-rc2\CMakeSystem.cmake;F:\src\Riemann2d\Build\Win64\CMakeFiles\cmake.verify_globs;%(AdditionalInputs)</AdditionalInputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">F:\src\Riemann2d\Build\Win64\CMakeFiles\generate.stamp</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
     </CustomBuild>
@@ -174,6 +246,11 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="F:\src\Riemann2d\Src\Dynamics\RigidBody2D.cpp" />
     <ClCompile Include="F:\src\Riemann2d\Src\Dynamics\SequentialImpulseSolver2D.cpp" />
     <ClCompile Include="F:\src\Riemann2d\Src\Fluid\AerodynamicsSimulation2D.cpp" />
+    <ClCompile Include="F:\src\Riemann2d\Src\Fluid\Compute\ComputeAirSolver.cpp" />
+    <ClCompile Include="F:\src\Riemann2d\Src\Fluid\Compute\ComputeDevice.cpp" />
+    <ClCompile Include="F:\src\Riemann2d\Src\Fluid\Compute\ComputeFluidSolver.cpp" />
+    <ClCompile Include="F:\src\Riemann2d\Src\Fluid\Compute\DX11ComputeDevice.cpp" />
+    <ClCompile Include="F:\src\Riemann2d\Src\Fluid\Cuda\CudaBackend.cpp" />
     <ClCompile Include="F:\src\Riemann2d\Src\Fluid\FluidRigidCoupling2D.cpp" />
     <ClCompile Include="F:\src\Riemann2d\Src\Fluid\FluidSimulation2D.cpp" />
     <ClCompile Include="F:\src\Riemann2d\Src\SoftBody\RopeSimulation2D.cpp" />
@@ -203,12 +280,33 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClInclude Include="F:\src\Riemann2d\Src\Dynamics\RigidBody2D.h" />
     <ClInclude Include="F:\src\Riemann2d\Src\Dynamics\SequentialImpulseSolver2D.h" />
     <ClInclude Include="F:\src\Riemann2d\Src\Fluid\AerodynamicsSimulation2D.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\Compute\AirComputeShaders.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\Compute\ComputeDevice.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\Compute\ComputeShaderSource.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\Compute\ComputeSolvers.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\Compute\FluidComputeShaders.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\Cuda\CudaSolvers.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\FluidComputeBackend.h" />
     <ClInclude Include="F:\src\Riemann2d\Src\Fluid\FluidRigidCoupling2D.h" />
     <ClInclude Include="F:\src\Riemann2d\Src\Fluid\FluidSimulation2D.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\GpuFluidSolvers.h" />
+    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\ParticleGrid2D.h" />
     <ClInclude Include="F:\src\Riemann2d\Src\Maths\Maths.h" />
     <ClInclude Include="F:\src\Riemann2d\Src\Maths\Transform2.h" />
     <ClInclude Include="F:\src\Riemann2d\Src\Maths\Vector2.h" />
     <ClInclude Include="F:\src\Riemann2d\Src\SoftBody\RopeSimulation2D.h" />
+    <Object Include="F:\src\Riemann2d\Build\Win64\Cuda\Debug\CudaFluidSolver.obj">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </Object>
+    <Object Include="F:\src\Riemann2d\Build\Win64\Cuda\Debug\CudaAirSolver.obj">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </Object>
+    <Object Include="F:\src\Riemann2d\Build\Win64\Cuda\Release\CudaFluidSolver.obj">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </Object>
+    <Object Include="F:\src\Riemann2d\Build\Win64\Cuda\Release\CudaAirSolver.obj">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </Object>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="F:\src\Riemann2d\Build\Win64\ZERO_CHECK.proj">
