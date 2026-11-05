@@ -1,6 +1,7 @@
 #include "Viewer.h"
 
 #include "FluidSurfaceBuilder.h"
+#include "SnowSurfaceBuilder.h"
 #include "GeometryBuilder.h"
 #include "Render/RHI/PlatformRHI.h"
 #include "Collision/Box2.h"
@@ -23,7 +24,7 @@ namespace Riemann2D::Viewer
         Height = height;
         Scenes = {{"SHAPE GALLERY"}, {"JOINT CHAIN"},
                   {"ROPE XPBD"}, {"FLUID GRAVITY"}, {"AIR NO GRAVITY"},
-                  {"DESTRUCTION"}, {"RAGDOLL"}};
+                  {"DESTRUCTION"}, {"RAGDOLL"}, {"SNOW"}};
         if (GetCudaBackendInfo().Available)
             PreferredFluidBackend = PreferredAirBackend = FluidComputeBackend::CUDA;
         else if (GetComputeShaderBackendInfo().Available)
@@ -86,7 +87,13 @@ namespace Riemann2D::Viewer
                 Air->AddEmitter(ScreenToWorld(input), 0.65f, 5.0f, {0.0f, 3.0f}, sourceStep);
             Air->Step(deltaTime);
         }
-        if (Fluid || Air)
+        if (Snow)
+        {
+            Snow->GetSettings().Gravity = {0, Gravity};
+            if (input.MouseX > 260) Snow->SetCapsuleTarget(ScreenToWorld(input).X);
+            Snow->Step(deltaTime);
+        }
+        if (Fluid || Air || Snow)
         {
             const float milliseconds = std::chrono::duration<float, std::milli>(
                 std::chrono::steady_clock::now() - simulationStart).count();
@@ -116,19 +123,20 @@ namespace Riemann2D::Viewer
         frame->ViewportWidth = Width;
         frame->ViewportHeight = Height;
         frame->PanelWidth = 260;
-        frame->Camera.Center = {0.0f, 4.0f};
-        frame->Camera.VerticalSize = 16.0f;
+        frame->Camera.Center = Snow ? Vector2{0, 2.5f} : Vector2{0, 4};
+        frame->Camera.VerticalSize = Snow ? std::max(12.0f, 16.5f * Height / std::max(Width - 260, 1)) : 16.0f;
 
         Interface.Begin(Width, Height, frame->PanelWidth, input);
         Interface.Label("RIEMANN 2D", {0.35f, 0.75f, 1.0f, 1.0f});
-        Interface.Label("SCENES");
-        for (std::size_t index = 0; index < Scenes.size(); ++index)
+        if (Interface.Button("SCENE: " + Scenes[SelectedScene].Name)) SceneListExpanded = !SceneListExpanded;
+        for (std::size_t index = 0; SceneListExpanded && index < Scenes.size(); ++index)
         {
             if (Interface.Button(Scenes[index].Name, SelectedScene == static_cast<int>(index)))
             {
                 SelectedScene = static_cast<int>(index);
                 AnimationTime = 0.0f;
                 RebuildPhysicsScene();
+                SceneListExpanded = false;
             }
         }
         Interface.Label("PARAMETERS");
@@ -150,8 +158,9 @@ namespace Riemann2D::Viewer
                 ShowAirVelocity = !ShowAirVelocity;
             Interface.Label("LMB: INJECT SMOKE", {0.65f, 0.78f, 0.92f, 1.0f});
         }
-        if (SelectedScene != AirScene) Interface.Slider("GRAVITY", Gravity, -20.0f, 0.0f);
-        if (Fluid || Air)
+        if (SelectedScene != AirScene && !Snow) Interface.Slider("GRAVITY", Gravity, -20.0f, 0.0f);
+        if (Snow) BuildSnowUI();
+        else if (Fluid || Air)
         {
             BuildSimulationBackendUI();
             if (Fluid)
@@ -194,9 +203,68 @@ namespace Riemann2D::Viewer
             frame->WorldDraws.push_back(std::move(particles));
         }
         if (Air) frame->WorldDraws.push_back(BuildSmokeDraw(*Air));
+        if (Snow) frame->WorldDraws.push_back(BuildSnowSurfaceDraw(*Snow, SnowQuality));
         frame->WorldDraws.push_back(BuildWorldDraw());
         frame->UserInterfaceDraws.push_back(Interface.End());
         return frame;
+    }
+
+    bool Viewer::SelectScene(const std::string& name)
+    {
+        for (std::size_t index = 0; index < Scenes.size(); ++index)
+        {
+            if (Scenes[index].Name == name || (name == "snow_simulation_2d" && index == SnowScene))
+            {
+                SelectedScene = static_cast<int>(index);
+                SceneListExpanded = false;
+                AnimationTime = 0;
+                RebuildPhysicsScene();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void Viewer::BuildSnowUI()
+    {
+        Interface.Label("FOLLOW SNOW SURFACE", {0.65f,0.78f,0.92f,1});
+        Interface.Label("SCRAPE: 20% OF LOCAL DEPTH", {0.65f,0.78f,0.92f,1});
+        char depth[80];
+        std::snprintf(depth, sizeof(depth), "SNOW %.2F M / CUT %.2F M", Snow->GetSurfaceHeight(), Snow->GetScrapeDepth());
+        Interface.Label(depth);
+        if (Interface.Button("RESET SNOW BED")) Snow->Reset(SnowQuality);
+        if (Interface.Button(SnowQuality == ContinuumQuality::Realtime ? "QUALITY: REALTIME" : "QUALITY: HIGH DETAIL"))
+        {
+            SnowQuality = SnowQuality == ContinuumQuality::Realtime ? ContinuumQuality::High : ContinuumQuality::Realtime;
+            Snow->Reset(SnowQuality);
+        }
+        Interface.Label("QUALITY CHANGE RESETS BED", {0.48f,0.55f,0.68f,1});
+        SnowSettings2D& settings = Snow->GetSettings();
+        const char* methods[] = {"METHOD: MPM PIC-FLIP", "METHOD: APIC MPM", "METHOD: MLS-MPM"};
+        if (Interface.Button(methods[static_cast<int>(settings.Transfer)]))
+            settings.Transfer = static_cast<MpmTransfer2D>((static_cast<int>(settings.Transfer)+1)%3);
+        Interface.Slider("VISCOSITY", settings.Material.Viscosity, 0, 15);
+        if (Interface.Button("CPU", Snow->GetBackend() == ContinuumBackend::CPU)) Snow->SetBackend(ContinuumBackend::CPU);
+        if (Interface.Button("SIMD", Snow->GetBackend() == ContinuumBackend::SIMD, SnowSimulation2D::IsSimdAvailable()))
+            Snow->SetBackend(ContinuumBackend::SIMD);
+        const auto& cuda = GetCudaBackendInfo();
+        if (Interface.Button(cuda.Available ? "CUDA" : "CUDA: UNAVAILABLE", Snow->GetBackend() == ContinuumBackend::CUDA, cuda.Available))
+            Snow->SetBackend(ContinuumBackend::CUDA);
+        const auto& compute = GetComputeShaderBackendInfo();
+        if (Interface.Button(compute.Available ? "COMPUTE SHADER - " + compute.API : "COMPUTE: UNAVAILABLE",
+            Snow->GetBackend() == ContinuumBackend::ComputeShader, compute.Available))
+            Snow->SetBackend(ContinuumBackend::ComputeShader);
+        const bool metal = compute.Available && compute.API == "Metal";
+        if (Interface.Button(metal ? "METAL" : "METAL: MACOS ONLY", Snow->GetBackend() == ContinuumBackend::Metal, metal))
+            Snow->SetBackend(ContinuumBackend::Metal);
+        char text[80];
+        std::snprintf(text, sizeof(text), "PARTICLES: %zu", Snow->GetParticles().size());
+        Interface.Label(text);
+        std::snprintf(text, sizeof(text), "SOLVE: %.2F MS", SimulationMilliseconds);
+        Interface.Label(text);
+        if (Snow->GetStatistics().TimeLimited) Interface.Label("TIME BUDGET ACTIVE", {1,0.65f,0.3f,1});
+        const std::string& error = Snow->GetBackendError();
+        if (!error.empty()) Interface.Label(error, {1,0.5f,0.25f,1});
     }
 
     FluidComputeBackend Viewer::GetSimulationBackend() const
@@ -248,6 +316,16 @@ namespace Riemann2D::Viewer
         Render::DrawPacket solid;
         solid.DebugName = "Scene solids";
         solid.Topology = Render::PrimitiveTopology::Triangles;
+        if (Snow)
+        {
+            const SnowCapsule2D& capsule = Snow->GetCapsule();
+            AddSolidCapsule(solid, capsule.Center, capsule.HalfLength, capsule.Radius,
+                            Pi * 0.5f, {0.95f, 0.33f, 0.12f, 1});
+            AddSolidCapsule(solid, capsule.Center + Vector2{-0.06f,0.04f}, capsule.HalfLength * 0.86f,
+                            capsule.Radius * 0.72f, Pi * 0.5f, {1, 0.62f, 0.25f, 1});
+            const float floorTop = Snow->GetSettings().BoundsMinimum.Y + Snow->GetSettings().CellSize;
+            AddSolidBox(solid, {0, floorTop - 0.15f}, {8, 0.15f}, 0, {0.18f, 0.23f, 0.3f, 1});
+        }
 
         for (const std::unique_ptr<RigidBody2D>& body : World.GetBodies())
         {
@@ -356,7 +434,7 @@ namespace Riemann2D::Viewer
     Vector2 Viewer::ScreenToWorld(const Render::InterfaceInput& input) const
     {
         constexpr int panelWidth = 260;
-        constexpr float verticalSize = 16.0f;
+        const float verticalSize = Snow ? std::max(12.0f, 16.5f * Height / std::max(Width - panelWidth, 1)) : 16.0f;
         const float viewportHeight = static_cast<float>(std::max(Height, 1));
         const float worldWidth = static_cast<float>(std::max(Width - panelWidth, 1));
         const float horizontalSize = verticalSize * worldWidth / viewportHeight;
@@ -365,7 +443,7 @@ namespace Riemann2D::Viewer
         const float localY = 1.0f - 2.0f *
             (static_cast<float>(input.MouseY) / viewportHeight);
         return {0.5f * horizontalSize * localX,
-                4.0f + 0.5f * verticalSize * localY};
+                (Snow ? 2.5f : 4.0f) + 0.5f * verticalSize * localY};
     }
 
     RigidBody2D* Viewer::PickFluidBody(const Vector2& worldPosition) const
@@ -535,7 +613,19 @@ namespace Riemann2D::Viewer
         FluidBodies.clear();
         FluidTankTransform = {};
         Air.reset();
+        Snow.reset();
         DestructionProjectile = nullptr;
+        if (SelectedScene == SnowScene)
+        {
+            Snow = std::make_unique<SnowSimulation2D>();
+            Snow->Reset(SnowQuality);
+            Snow->SetBackend(SnowSimulation2D::IsSimdAvailable() ? ContinuumBackend::SIMD : ContinuumBackend::CPU);
+            if (GetCudaBackendInfo().Available) Snow->SetBackend(ContinuumBackend::CUDA);
+            else if (GetComputeShaderBackendInfo().Available)
+                Snow->SetBackend(GetComputeShaderBackendInfo().API == "Metal" ? ContinuumBackend::Metal : ContinuumBackend::ComputeShader);
+            SimulationMilliseconds = 0;
+            return;
+        }
         if (SelectedScene == ShapeGalleryScene)
         {
             RigidBodyDesc2D mesh;

@@ -8,6 +8,7 @@
 #include "Fluid/AerodynamicsSimulation2D.h"
 #include "Destruction/DestructionSet2D.h"
 #include "Dynamics/Ragdoll2D.h"
+#include "Continuum/SnowSimulation2D.h"
 
 #include <cstdint>
 #include <string>
@@ -24,6 +25,7 @@ namespace Riemann2D::Viewer
         void Shutdown();
         void CaptureNextFrame(const std::string& path) { NextCapturePath = path; }
         FluidComputeBackend GetSimulationBackend() const;
+        bool SelectScene(const std::string& name);
 
     private:
         enum SceneIndex
@@ -34,7 +36,8 @@ namespace Riemann2D::Viewer
             FluidScene,
             AirScene,
             DestructionScene,
-            RagdollScene
+            RagdollScene,
+            SnowScene
         };
 
         struct Scene
@@ -59,6 +62,7 @@ namespace Riemann2D::Viewer
         void UpdateFluidTankTransform();
         void ConfineFluidBodiesToTank();
         void BuildSimulationBackendUI();
+        void BuildSnowUI();
 
         Render::Renderer2 Renderer;
         Render::ImmediateUI Interface;
@@ -72,6 +76,9 @@ namespace Riemann2D::Viewer
         int SelectedBackend = 0;
         bool RenderFluidSurface = true;
         bool ShowAirVelocity = false;
+        bool SceneListExpanded = true;
+        ContinuumQuality SnowQuality = ContinuumQuality::Realtime;
+        std::unique_ptr<SnowSimulation2D> Snow;
         float Gravity = -9.81f;
         float AnimationTime = 0.0f;
         float SimulationMilliseconds = 0.0f;

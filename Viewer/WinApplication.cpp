@@ -25,7 +25,7 @@ namespace
         {
             const auto* create = reinterpret_cast<CREATESTRUCTW*>(lParam);
             SetWindowLongPtrW(window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(create->lpCreateParams));
-            return TRUE;
+            return DefWindowProcW(window, message, wParam, lParam);
         }
         case WM_SIZE:
             if (state && wParam != SIZE_MINIMIZED)
@@ -65,7 +65,7 @@ namespace
     }
 }
 
-int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int showCommand)
+int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int showCommand)
 {
     const wchar_t className[] = L"Riemann2DViewerWindow";
     WNDCLASSEXW windowClass{};
@@ -87,6 +87,8 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int showCommand)
     RECT client{};
     GetClientRect(window, &client);
     if (!state.Viewer.Initialize(window, client.right - client.left, client.bottom - client.top)) return 3;
+    if (std::wstring(commandLine).find(L"snow_simulation_2d") != std::wstring::npos)
+        state.Viewer.SelectScene("snow_simulation_2d");
 
     auto previous = std::chrono::steady_clock::now();
     MSG message{};

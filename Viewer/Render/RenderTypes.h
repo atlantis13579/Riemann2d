@@ -33,7 +33,8 @@ namespace Riemann2D::Render
     enum class FieldMaterial : std::uint8_t
     {
         Water = 1,
-        Smoke = 2
+        Smoke = 2,
+        SnowSand = 3
     };
 
     struct ScalarField

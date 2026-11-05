@@ -11,6 +11,26 @@ namespace Riemann2D::Render
         float down = SAMPLE_FIELD(uv - float2(0.0, texel.y));
         float up = SAMPLE_FIELD(uv + float2(0.0, texel.y));
         float2 gradient = float2(right - left, up - down);
+        if (parameters.z > 2.5) {
+            float snow = saturate(parameters.w);
+            float edgeWidth = max(fwidth(density), 0.025);
+            float alpha = smoothstep(0.5 - edgeWidth, 0.5 + edgeWidth, density);
+            float surface = 1.0 - smoothstep(0.65, 1.6, density);
+            float hash = sin(dot(floor(uv / texel * 2.0), float2(127.1, 311.7))) * 43758.5453;
+            float grain = hash - floor(hash);
+            float3 normal = normalize(float3(-gradient * 3.5, 0.55));
+            float3 light = normalize(float3(-0.45, 0.75, 0.65));
+            float diffuse = max(dot(normal, light), 0.0);
+            float occlusion = exp(-0.12 * max(density - 1.0, 0.0));
+            float3 shadow = lerp(float3(0.24, 0.12, 0.045), float3(0.26, 0.43, 0.62), snow);
+            float3 bright = lerp(float3(0.86, 0.61, 0.29), float3(0.88, 0.95, 1.0), snow);
+            float3 color = lerp(shadow, bright, saturate((0.45 + 0.55 * diffuse) * occlusion));
+            color *= 0.91 + 0.13 * grain;
+            float rim = surface * saturate(-gradient.y * 4.0);
+            color += bright * rim * 0.28;
+            color += float3(0.12, 0.15, 0.18) * snow * step(0.985, grain) * diffuse;
+            return float4(color, alpha);
+        }
         if (parameters.z < 1.5) {
             float edgeWidth = max(fwidth(density), 0.035);
             float alpha = smoothstep(0.55 - edgeWidth, 0.55 + edgeWidth, density);

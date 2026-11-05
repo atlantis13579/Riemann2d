@@ -19,6 +19,14 @@ references.
   recursive polygon fracture, and articulated ragdolls.
 - Dependency-free unit and integration tests.
 
+Snow and sand use quadratic B-spline Material Point Method transfers with
+PIC/FLIP, APIC, and MLS-MPM variants. Fixed-corotated snow elasticity with
+compression hardening blends with Hencky elasticity and Drucker-Prager sand
+plasticity. The deformation solver includes scalar CPU, SSE2/NEON, CUDA, DX11
+Compute Shader, and native Metal transfer paths, CFL-limited integration,
+viscous stress, and moving capsule friction. GPU grid transfers gather particles
+from spatial bins without contended floating-point atomics.
+
 ## Viewer
 
 The left immediate-mode panel selects a scene and changes gravity, contact
@@ -27,7 +35,16 @@ orthographic camera. Rendering owns all platform RHI objects on a dedicated
 thread and consumes immutable, monotonically numbered frame packets.
 
 Available scenes are Shape Gallery, Joint Chain, Rope XPBD,
-Fluid Gravity, Air No Gravity, Destruction, and Ragdoll.
+Fluid Gravity, Air No Gravity, Destruction, Ragdoll, and Snow.
+
+The snow scene couples a surface-following capsule with Coulomb friction.
+A robust local free-surface estimate ahead of the tool sets its penetration to
+20 percent of the current snow thickness. Resampling follows horizontal travel,
+so a stationary tool does not progressively drill into its own trench. Displaced
+material persists between passes. Viscosity controls rate-dependent stress. Real-time
+quality uses a coarse grid and a bounded solver time budget; high-detail quality
+uses a denser grid and more material samples. Density-surface rendering adds
+granular texture, blue snow shadows, and contour lighting.
 
 Liquid surfaces use a filtered density texture with antialiased contours,
 depth tint, and surface highlights, including isolated droplets. Smoke uses
@@ -42,9 +59,7 @@ preserves the current simulation, and runtime failures fall back to CPU. The
 library itself defaults to CPU.
 
 Compute Shader uses DX11 Shader Model 5 on Windows and Metal on macOS; it does not
-require the CUDA Toolkit or an NVIDIA GPU. See [algorithm references and
-measurements](Docs/FluidOptimization.md), [CUDA setup and validation](Docs/CudaFluids.md)
-and [Compute Shader implementation, measurements, and platform validation](Docs/ComputeFluids.md).
+require the CUDA Toolkit or an NVIDIA GPU.
 
 ## Collision terminology
 
