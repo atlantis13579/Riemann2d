@@ -1,9 +1,11 @@
 #include "PhysicsWorld2D.h"
 
+#include "Collision/Box2.h"
 #include "Maths/Maths.h"
 
 #include <algorithm>
 #include <cmath>
+#include <stdexcept>
 
 namespace Riemann2D
 {
@@ -16,6 +18,29 @@ namespace Riemann2D
     {
         Bodies.push_back(std::make_unique<RigidBody2D>(description));
         return *Bodies.back();
+    }
+
+    CharacterController2D& PhysicsWorld2D::CreateCharacterController(const CharacterControllerSettings2D& settings,
+                                                                      const Vector2& position)
+    {
+        if (!std::isfinite(position.X) || !std::isfinite(position.Y) ||
+            !std::isfinite(settings.HalfExtent.X) || !std::isfinite(settings.HalfExtent.Y) ||
+            settings.HalfExtent.X <= 0 || settings.HalfExtent.Y <= 0 ||
+            !(settings.SlopeLimitCosine > 0 && settings.SlopeLimitCosine <= 1))
+            throw std::invalid_argument("Invalid character dimensions, slope limit or position");
+
+        RigidBodyDesc2D desc;
+        desc.Transform.Position = position;
+        desc.Shape = std::make_shared<Box2>(settings.HalfExtent);
+        desc.GravityScale = 0.0f;
+        desc.LinearDamping = desc.Friction = desc.Restitution = 0.0f;
+        auto body = std::make_unique<RigidBody2D>(desc);
+        body->InverseInertia = 0.0f;
+        auto character = std::unique_ptr<CharacterController2D>(new CharacterController2D(*body, settings.SlopeLimitCosine));
+        Characters.reserve(Characters.size() + 1);
+        Bodies.push_back(std::move(body));
+        Characters.push_back(std::move(character));
+        return *Characters.back();
     }
 
     IConstraint2D& PhysicsWorld2D::AddConstraint(std::unique_ptr<IConstraint2D> constraint)
@@ -47,6 +72,7 @@ namespace Riemann2D
         Contacts.clear();
         Constraints.clear();
         ForceFields.clear();
+        Characters.clear();
         Bodies.clear();
     }
 
@@ -57,6 +83,8 @@ namespace Riemann2D
             return;
         }
         deltaTime = std::min(deltaTime, 1.0f / 20.0f);
+        const float gravityHalfStep = 0.5f * Settings.Gravity.Y * deltaTime;
+        for (auto& character : Characters) character->BeginStep(gravityHalfStep);
         for (const std::unique_ptr<ForceField2D>& field : ForceFields)
         {
             field->Update(deltaTime);
@@ -111,6 +139,9 @@ namespace Riemann2D
                 constraint->SolvePosition();
             }
         }
+        // With no position pass, the current contacts still describe the pre-drift poses.
+        if (!Characters.empty() && Settings.PositionIterations <= 0) FindContacts();
+        for (auto& character : Characters) character->FinishStep(gravityHalfStep, Contacts);
     }
 
     void PhysicsWorld2D::FindContacts()
