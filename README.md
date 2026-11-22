@@ -1,68 +1,63 @@
-# Riemann2D
+# Introduction
 
-Riemann2D is a self-contained C++17 rigid-body and multiphysics playground for
-the XY plane. The implementation is independent from the 3D Riemann project;
-that repository and Box2D are used only as architectural and algorithmic
-references.
+Riemann2D is a 2D rigid-body and multiphysics engine with zero dependencies. It is the 2D version of [Riemann](https://github.com/atlantis13579/Riemann).
 
-## Implemented systems
+## Features
 
-- Five collision shapes: Box, Sphere, Capsule, Convex, and TriMesh, including
-  every unordered pair combination.
-- Static BVH, generation-safe dynamic fat-AABB tree, SAP broadphase, and
-  SAT/GJK/EPA narrowphase dispatch.
-- Rigid bodies with Sequential Impulse or dense active-set LCP contact solving.
-- Scalar CPU and SSE2/NEON SIMD linear algebra backends.
-- Distance, Revolute, Prismatic, Weld, Wheel, Motor, Mouse, Pulley, Gear, and
-  Friction constraints.
-- XPBD rope, spatially hashed position-based liquid, gravity-free MAC air field,
-  recursive polygon fracture, and articulated ragdolls.
-- Dependency-free unit and integration tests.
+* Simulation and Collision Detection for various shapes
+    * Box, circle, capsule, convex polygon, and triangle mesh
+    * Static BVH, dynamic fat-AABB tree, and sweep and prune
+    * SAT, GJK, and EPA narrowphase
 
-Snow and sand use quadratic B-spline Material Point Method transfers with
-PIC/FLIP, APIC, and MLS-MPM variants. Fixed-corotated snow elasticity with
-compression hardening blends with Hencky elasticity and Drucker-Prager sand
-plasticity. The deformation solver includes scalar CPU, SSE2/NEON, CUDA, DX11
-Compute Shader, and native Metal transfer paths, CFL-limited integration,
-viscous stress, and moving capsule friction. GPU grid transfers gather particles
-from spatial bins without contended floating-point atomics.
+* Rigid Body Dynamics Simulation
+    * Sequential impulse and active-set LCP contact solvers
+    * Distance, revolute, prismatic, weld, wheel, motor, mouse, pulley, gear, and friction joints
+    * Articulated ragdolls
+    * Scalar CPU and SSE2/NEON linear algebra backends
 
-## Viewer
+* Destruction Simulation
+    * Recursive polygon fracture
 
-The left immediate-mode panel selects a scene and changes gravity, contact
-solver, and solver backend. The right viewport renders the XY plane through an
-orthographic camera. Rendering owns all platform RHI objects on a dedicated
-thread and consumes immutable, monotonically numbered frame packets.
+* Deformation Body Simulation
+    * XPBD rope simulation
 
-Available scenes are Shape Gallery, Joint Chain, Rope XPBD,
-Fluid Gravity, Air No Gravity, Destruction, Ragdoll, and Snow.
+* Fluid Dynamics Simulation
+    * Spatially hashed position-based liquid
+    * SPH density kernels with position-based fluid (PBF) constraints
+    * Pressure field interaction with rigid bodies
 
-The snow scene couples a surface-following capsule with Coulomb friction.
-A robust local free-surface estimate ahead of the tool sets its penetration to
-20 percent of the current snow thickness. Resampling follows horizontal travel,
-so a stationary tool does not progressively drill into its own trench. Displaced
-material persists between passes. Viscosity controls rate-dependent stress. Real-time
-quality uses a coarse grid and a bounded solver time budget; high-detail quality
-uses a denser grid and more material samples. Density-surface rendering adds
-granular texture, blue snow shadows, and contour lighting.
+* Aerodynamics Simulation
+    * MAC-grid smoke with limited MacCormack transport and multigrid pressure projection
+    * Surface pressure and incident-flow drag on rigid bodies
+    * Moving solid boundaries with masked pressure correction, matched normal velocity, and smoke displacement
 
-Liquid surfaces use a filtered density texture with antialiased contours,
-depth tint, and surface highlights, including isolated droplets. Smoke uses
-limited MacCormack transport, multigrid pressure projection, and filtered
-extinction shading. The air scene retains a 480 x 360 grid. Liquid rendering
-can also switch to particles.
+* Continuum Media Simulation
+    * Quadratic B-spline MPM with PIC/FLIP, APIC, and MLS-MPM transfers
+    * Fixed-corotated snow elasticity, compression hardening, Hencky elasticity, and Drucker-Prager sand plasticity
+    * CFL-limited integration, viscous stress, and moving capsule friction
 
-Liquid and smoke have CPU, CUDA, and Compute Shader solver backends. Each scene
-has independent backend buttons, device status, and solver timing. The viewer
-prefers CUDA when available, then native Compute Shader, then CPU. Switching
-preserves the current simulation, and runtime failures fall back to CPU. The
-library itself defaults to CPU.
+## Examples
 
-Compute Shader uses DX11 Shader Model 5 on Windows and Metal on macOS; it does not
-require the CUDA Toolkit or an NVIDIA GPU.
+#### 2D Rigid Body Dynamics
 
-## Collision terminology
+https://github.com/user-attachments/assets/cc19f7b5-238d-4bad-9e03-2220b26acb19
 
-The broadphase uses sweep and prune (SAP). The separating axis theorem (SAT)
-is a narrowphase test; GJK/EPA handles the general support-mapped convex cases,
-and triangle meshes dispatch to their child triangles.
+#### 2D Articulated Dynamics
+
+https://github.com/user-attachments/assets/dd925bca-e1ca-4a34-906c-ba2994c3c1a7
+
+#### 2D Destruction System
+
+https://github.com/user-attachments/assets/770ba12a-4f38-490c-a4ce-50841d9cab56
+
+#### 2D Fluids Simulation
+
+https://github.com/user-attachments/assets/4e08dce5-ad5f-4f5e-91f4-c00a8e93818b
+
+#### 2D Aerodynamics Simulation
+
+https://github.com/user-attachments/assets/eb9d1fac-28bb-47ef-a8b1-536ad06330ee
+
+#### 2D Snow Simulation
+
+https://github.com/user-attachments/assets/2b9598ca-af02-47cf-887c-d2fcb14593c4
