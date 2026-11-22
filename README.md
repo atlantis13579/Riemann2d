@@ -1,6 +1,6 @@
 # Introduction
 
-Riemann2D is a 2D rigid-body and multiphysics engine with zero dependencies. It is the 2D version of [Riemann](https://github.com/atlantis13579/Riemann).
+Riemann2D is a 2D physics engine with zero dependencies. It is the 2D version of [Riemann](https://github.com/atlantis13579/Riemann).
 
 ## Features
 
