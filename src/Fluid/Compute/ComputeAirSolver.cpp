@@ -96,7 +96,7 @@ namespace Riemann2D
         public:
             bool Step(const AerodynamicsSettings2D& settings, const Vector2& cellSize,
                       int width, int height, float deltaTime, bool projectOnly, std::vector<float>& density,
-                      std::vector<float>& u, std::vector<float>& v, std::string& error) override
+                      std::vector<float>& u, std::vector<float>& v, std::vector<float>& pressure, std::string& error) override
             {
                 try
                 {
@@ -136,6 +136,8 @@ namespace Riemann2D
                     Dispatch(ApplyPressure, {U, V, Levels[0].Pressure}, p, std::max(nu, nv));
                     std::vector<Readback> requests{{U, ReadU.data(), u.size() * sizeof(float)},
                         {V, ReadV.data(), v.size() * sizeof(float)}};
+                    pressure.resize(static_cast<std::size_t>(n));
+                    requests.push_back({Levels[0].Pressure, pressure.data(), pressure.size() * sizeof(float)});
                     if (!projectOnly)
                     {
                         Dispatch(ForwardDensity, {Density, U, V, Forward, Centers}, p, n);

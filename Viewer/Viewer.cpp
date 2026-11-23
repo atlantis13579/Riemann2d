@@ -64,7 +64,7 @@ namespace Riemann2D::Viewer
                                                    : ContactSolverType2D::LCP,
                                SelectedBackend == 0 ? SolverBackend2D::ScalarCPU
                                                     : SolverBackend2D::SIMDCPU);
-        World.Step(deltaTime);
+        if (!Air) World.Step(deltaTime);
         ConfineFluidBodiesToTank();
         if (Rope)
         {
@@ -86,6 +86,8 @@ namespace Riemann2D::Viewer
             if (input.MouseDown && input.MouseX > 260)
                 Air->AddEmitter(ScreenToWorld(input), 0.65f, 5.0f, {0.0f, 3.0f}, sourceStep);
             Air->Step(deltaTime);
+            World.Step(deltaTime);
+            Air->SynchronizeRigidBodies();
         }
         if (Snow)
         {
@@ -341,7 +343,11 @@ namespace Riemann2D::Viewer
             if (renderedAsDestructionPiece) continue;
 
             const Render::Color color = body->GetType() == BodyType2D::Static
-                ? Render::Color{0.18f, 0.22f, 0.3f, 1.0f}
+                ? (SelectedScene == AirScene
+                    ? Render::Color{0.36f, 0.39f, 0.43f, 1.0f}
+                    : Render::Color{0.18f, 0.22f, 0.3f, 1.0f})
+                : SelectedScene == AirScene
+                    ? Render::Color{0.55f, 0.58f, 0.62f, 1.0f}
                 : SelectedScene == FluidScene
                     ? Render::Color{0.95f, 0.55f, 0.18f, 1.0f}
                     : Render::Color{0.18f, 0.62f, 0.9f, 1.0f};
@@ -778,13 +784,26 @@ namespace Riemann2D::Viewer
             Air->SetBackend(PreferredAirBackend);
             SimulationMilliseconds = 0.0f;
             Air->Initialize({-7.0f, -2.0f}, {7.0f, 9.0f}, 480, 360);
+            RigidBodyDesc2D ball;
+            ball.Shape = std::make_shared<Sphere2>(0.825f);
+            ball.Transform.Position = {-3.0f, 1.9f};
+            ball.Density = 2.5f;
+            ball.GravityScale = 0.0f;
+            ball.LinearDamping = 0.15f;
+            World.CreateBody(ball);
+            RigidBodyDesc2D obstacle;
+            obstacle.Type = BodyType2D::Static;
+            obstacle.Shape = std::make_shared<Box2>(Vector2{1.2f, 0.4f});
+            obstacle.Transform.Position = {2.6f, 4.5f};
+            World.CreateBody(obstacle);
+            Air->SetRigidBodies(&World);
             return;
         }
         if (SelectedScene == DestructionScene)
         {
             RigidBodyDesc2D ground;
             ground.Type = BodyType2D::Static;
-            ground.Shape = std::make_shared<Box2>(Vector2{8.0f, 0.35f});
+            ground.Shape = std::make_shared<Box2>(Vector2{12.0f, 0.35f});
             ground.Transform.Position = {0.0f, -1.0f};
             World.CreateBody(ground);
             RigidBodyDesc2D projectile;
@@ -793,19 +812,36 @@ namespace Riemann2D::Viewer
             projectile.Density = 4.0f;
             DestructionProjectile = &World.CreateBody(projectile);
             Destruction = std::make_unique<DestructionSet2D>();
-            Destruction->CreateBox({0.0f, 2.0f}, {2.0f, 3.0f}, 4);
+            Destruction->CreateBox({0.0f, 2.0f}, {2.0f, 3.0f}, 14);
+            Destruction->GetSettings().FragmentSizeVariation = 0.8f;
             Destruction->SetPhysicsWorld(&World);
             return;
         }
         if (SelectedScene == RagdollScene)
         {
-            RigidBodyDesc2D ground;
-            ground.Type = BodyType2D::Static;
-            ground.Shape = std::make_shared<Box2>(Vector2{8.0f, 0.35f});
-            ground.Transform.Position = {0.0f, -1.0f};
-            World.CreateBody(ground);
+            constexpr float stairBottom = -1.4f;
+            for (int step = 0; step < 8; ++step)
+            {
+                const float top = 5.2f - 0.85f * step;
+                RigidBodyDesc2D stair;
+                stair.Type = BodyType2D::Static;
+                stair.Shape = std::make_shared<Box2>(Vector2{0.78f, 0.5f * (top - stairBottom)});
+                stair.Transform.Position = {-6.3f + 1.56f * step, 0.5f * (top + stairBottom)};
+                stair.Friction = 0.15f;
+                World.CreateBody(stair);
+            }
+            RigidBodyDesc2D landing;
+            landing.Type = BodyType2D::Static;
+            landing.Shape = std::make_shared<Box2>(Vector2{4.0f, 0.325f});
+            landing.Transform.Position = {8.0f, -1.075f};
+            World.CreateBody(landing);
             Ragdoll = std::make_unique<Ragdoll2D>();
-            Ragdoll->Build(World, {0.0f, 5.5f}, 0.9f);
+            Ragdoll->Build(World, {-7.2f, 8.5f}, 0.9f);
+            for (const RagdollPart2D& part : Ragdoll->GetParts())
+            {
+                part.Body->SetLinearVelocity({4.5f, 0.0f});
+                part.Body->SetAngularVelocity(-3.0f);
+            }
             return;
         }
 

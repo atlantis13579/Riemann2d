@@ -26,6 +26,6 @@ namespace Riemann2D
         virtual bool Step(const AerodynamicsSettings2D& settings, const Vector2& cellSize,
                           int width, int height, float deltaTime, bool projectOnly,
                           std::vector<float>& density, std::vector<float>& u,
-                          std::vector<float>& v, std::string& error) = 0;
+                          std::vector<float>& v, std::vector<float>& pressure, std::string& error) = 0;
     };
 }

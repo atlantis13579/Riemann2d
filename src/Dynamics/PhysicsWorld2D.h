@@ -3,7 +3,7 @@
 #include "Collision/Contact2.h"
 #include "Collision/SAT2.h"
 #include "Collision/NarrowPhase2.h"
-#include "Dynamics/CharacterController2D.h"
+#include "Dynamics/RobotController2D.h"
 #include "Dynamics/Constraints2D.h"
 #include "Dynamics/RigidBody2D.h"
 #include "Dynamics/ContactSolver2D.h"
@@ -29,7 +29,7 @@ namespace Riemann2D
         explicit PhysicsWorld2D(const PhysicsWorldSettings2D& settings = {});
 
         RigidBody2D& CreateBody(const RigidBodyDesc2D& description);
-        CharacterController2D& CreateCharacterController(const CharacterControllerSettings2D& settings, const Vector2& position);
+        RobotController2D& CreateRobotController(const RobotControllerSettings2D& settings, const Vector2& position);
         IConstraint2D& AddConstraint(std::unique_ptr<IConstraint2D> constraint);
         bool RemoveConstraint(IConstraint2D* constraint);
         ForceField2D& AddForceField(std::unique_ptr<ForceField2D> field);
@@ -54,7 +54,7 @@ namespace Riemann2D
 
         PhysicsWorldSettings2D Settings;
         std::vector<std::unique_ptr<RigidBody2D>> Bodies;
-        std::vector<std::unique_ptr<CharacterController2D>> Characters;
+        std::vector<std::unique_ptr<RobotController2D>> Robots;
         std::vector<std::unique_ptr<IConstraint2D>> Constraints;
         std::vector<std::unique_ptr<ForceField2D>> ForceFields;
         std::vector<Contact2> Contacts;

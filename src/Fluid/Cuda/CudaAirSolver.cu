@@ -357,7 +357,7 @@ namespace Riemann2D
         public:
             bool Step(const AerodynamicsSettings2D& settings, const Vector2& cellSize,
                       int width, int height, float deltaTime, bool projectOnly, std::vector<float>& density,
-                      std::vector<float>& u, std::vector<float>& v, std::string& error) override
+                      std::vector<float>& u, std::vector<float>& v, std::vector<float>& pressure, std::string& error) override
             {
                 try
                 {
@@ -376,6 +376,8 @@ namespace Riemann2D
                     Graph& graph = projectOnly ? ProjectionGraph : StepGraph;
                     if (!graph.Instance) Capture(graph, projectOnly);
                     Check(cudaGraphLaunch(graph.Instance, Queue.Handle));
+                    pressure.resize(static_cast<std::size_t>(width) * height);
+                    Check(cudaMemcpyAsync(pressure.data(), Levels[0].Pressure, pressure.size() * sizeof(float), cudaMemcpyDeviceToHost, Queue.Handle));
                     Check(cudaMemcpyAsync(ReadU.data(), U.Data, u.size() * sizeof(float), cudaMemcpyDeviceToHost, Queue.Handle));
                     Check(cudaMemcpyAsync(ReadV.data(), V.Data, v.size() * sizeof(float), cudaMemcpyDeviceToHost, Queue.Handle));
                     if (!projectOnly) Check(cudaMemcpyAsync(ReadDensity.data(), Density.Data, density.size() * sizeof(float), cudaMemcpyDeviceToHost, Queue.Handle));

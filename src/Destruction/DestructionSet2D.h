@@ -26,6 +26,7 @@ namespace Riemann2D
         float Restitution = 0.18f;
         float LinearDamping = 0.08f;
         float FragmentDensity = 1.0f;
+        float FragmentSizeVariation = 0.0f;
     };
 
     class DestructionSet2D

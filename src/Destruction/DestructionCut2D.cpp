@@ -64,6 +64,22 @@ namespace Riemann2D
             return radius;
         }
 
+        float SharpCornerPenalty(const std::vector<Vector2>& polygon)
+        {
+            float penalty = 0.0f;
+            for (std::size_t index = 0; index < polygon.size(); ++index)
+            {
+                const Vector2 incoming =
+                    (polygon[(index + polygon.size() - 1) % polygon.size()] - polygon[index]).SafeUnit();
+                const Vector2 outgoing =
+                    (polygon[(index + 1) % polygon.size()] - polygon[index]).SafeUnit();
+                // Discourage corners sharper than 60 degrees without removing material.
+                const float sharpness = std::max(0.0f, incoming.Dot(outgoing) - 0.5f);
+                penalty += sharpness * sharpness;
+            }
+            return penalty;
+        }
+
         float EdgeAlignmentPenalty(const std::vector<Vector2>& polygon,
                                    const Vector2& cutNormal)
         {
@@ -124,7 +140,7 @@ namespace Riemann2D
     bool FindCompactDestructionSplit2D(const std::vector<Vector2>& polygon,
                                        int negativePieceCount, int positivePieceCount,
                                        int branch, std::vector<Vector2>& bestNegative,
-                                       std::vector<Vector2>& bestPositive)
+                                       std::vector<Vector2>& bestPositive, float sizeVariation)
     {
         constexpr int angleCandidateCount = 24;
         constexpr int offsetCandidateCount = 5;
@@ -133,12 +149,19 @@ namespace Riemann2D
         if (totalArea <= Epsilon || totalPieceCount <= 1) return false;
 
         const Vector2 centroid = PolygonCentroid2D(polygon);
-        const float targetNegativeShare = static_cast<float>(negativePieceCount) /
-                                          static_cast<float>(totalPieceCount);
+        const float uniformNegativeShare = static_cast<float>(negativePieceCount) /
+                                           static_cast<float>(totalPieceCount);
+        const float variation = std::max(0.0f, std::min(sizeVariation, 1.0f));
+        // Vary branch area deterministically while keeping both children substantial.
+        const float shareOffset = 0.28f * variation *
+            std::sin(2.39996f * static_cast<float>(branch) + 0.7f * static_cast<float>(totalPieceCount));
+        const float targetNegativeShare = std::max(0.2f, std::min(0.8f,
+            uniformNegativeShare + shareOffset));
         const float phase = 0.173f * static_cast<float>(branch) +
                             0.113f * static_cast<float>(totalPieceCount);
         const float preferredOffset = 0.045f *
-            std::sin(1.37f * static_cast<float>(branch + totalPieceCount));
+            std::sin(1.37f * static_cast<float>(branch + totalPieceCount)) +
+            1.6f * (targetNegativeShare - uniformNegativeShare);
         float bestScore = FLT_MAX;
 
         for (int angleIndex = 0; angleIndex < angleCandidateCount; ++angleIndex)
@@ -181,7 +204,8 @@ namespace Riemann2D
                 const float offsetError = std::abs(offsetFraction - preferredOffset);
                 const float score = 30.0f * areaError + 0.035f * compactness +
                                     0.15f * offsetError +
-                                    1.5f * EdgeAlignmentPenalty(polygon, normal);
+                                    1.5f * EdgeAlignmentPenalty(polygon, normal) +
+                                    64.0f * (SharpCornerPenalty(negative) + SharpCornerPenalty(positive));
                 if (score < bestScore)
                 {
                     bestScore = score;

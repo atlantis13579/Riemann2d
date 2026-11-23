@@ -7,19 +7,19 @@
 
 namespace Riemann2D
 {
-    struct CharacterControllerSettings2D
+    struct RobotControllerSettings2D
     {
         Vector2 HalfExtent{0.35f, 0.9f};
         float SlopeLimitCosine = 0.70710678f;
     };
 
-    // An upright character in the XY plane. The world solver supplies floor,
+    // An upright robot in the XY plane. The world solver supplies floor,
     // wall and ceiling contacts, including contacts with other moving bodies.
-    class CharacterController2D
+    class RobotController2D
     {
     public:
-        CharacterController2D(const CharacterController2D&) = delete;
-        CharacterController2D& operator=(const CharacterController2D&) = delete;
+        RobotController2D(const RobotController2D&) = delete;
+        RobotController2D& operator=(const RobotController2D&) = delete;
         const Vector2& GetPosition() const { return Body.GetTransform().Position; }
         bool IsGrounded() const { return Grounded; }
         void SetMoveVelocity(float horizontalSpeed);
@@ -27,7 +27,7 @@ namespace Riemann2D
 
     private:
         friend class PhysicsWorld2D;
-        CharacterController2D(RigidBody2D& body, float slopeLimitCosine);
+        RobotController2D(RigidBody2D& body, float slopeLimitCosine);
         void BeginStep(float gravityHalfStep);
         void FinishStep(float gravityHalfStep, const std::vector<Contact2>& contacts);
 

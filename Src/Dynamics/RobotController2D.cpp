@@ -1,4 +1,4 @@
-#include "CharacterController2D.h"
+#include "RobotController2D.h"
 
 #include "Dynamics/ContactSolverUtilities2D.h"
 
@@ -7,19 +7,19 @@
 
 namespace Riemann2D
 {
-    CharacterController2D::CharacterController2D(RigidBody2D& body, float slopeLimitCosine)
+    RobotController2D::RobotController2D(RigidBody2D& body, float slopeLimitCosine)
         : Body(body), SlopeLimitCosine(slopeLimitCosine)
     {
     }
 
-    void CharacterController2D::SetMoveVelocity(float horizontalSpeed)
+    void RobotController2D::SetMoveVelocity(float horizontalSpeed)
     {
         if (!std::isfinite(horizontalSpeed))
-            throw std::invalid_argument("Character walk speed must be finite");
+            throw std::invalid_argument("Robot walk speed must be finite");
         WalkSpeed = horizontalSpeed;
     }
 
-    bool CharacterController2D::Jump(float speed)
+    bool RobotController2D::Jump(float speed)
     {
         if (!Grounded || !std::isfinite(speed) || speed <= 0.0f) return false;
         Body.SetLinearVelocity({Body.GetLinearVelocity().X, speed});
@@ -27,13 +27,13 @@ namespace Riemann2D
         return true;
     }
 
-    void CharacterController2D::BeginStep(float gravityHalfStep)
+    void RobotController2D::BeginStep(float gravityHalfStep)
     {
         // The drift uses the midpoint velocity, giving an exact free-flight arc.
         Body.SetLinearVelocity({WalkSpeed, Body.GetLinearVelocity().Y + gravityHalfStep});
     }
 
-    void CharacterController2D::FinishStep(float gravityHalfStep, const std::vector<Contact2>& contacts)
+    void RobotController2D::FinishStep(float gravityHalfStep, const std::vector<Contact2>& contacts)
     {
         Body.SetLinearVelocity(Body.GetLinearVelocity() + Vector2{0.0f, gravityHalfStep});
         Grounded = false;

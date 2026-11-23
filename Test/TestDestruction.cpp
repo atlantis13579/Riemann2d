@@ -6,6 +6,8 @@
 #include "Dynamics/PhysicsWorld2D.h"
 
 #include <cmath>
+#include <algorithm>
+#include <limits>
 #include <memory>
 
 using namespace Riemann2D;
@@ -21,7 +23,7 @@ namespace
     }
 }
 
-R2_TEST("Four-piece polygon fracture preserves area and avoids thin strips")
+R2_TEST("Four-piece polygon fracture preserves area and avoids sharp slivers")
 {
     DestructionSet2D destruction;
     destruction.CreateBox({0.0f, 2.0f}, {2.0f, 3.0f}, 4);
@@ -36,9 +38,51 @@ R2_TEST("Four-piece polygon fracture preserves area and avoids thin strips")
         const float perimeter = PolygonPerimeter(piece.LocalVertices);
         R2_REQUIRE(area > 0.45f * intactArea / 4.0f);
         R2_REQUIRE(perimeter * perimeter / area < 32.0f);
+        for (std::size_t index = 0; index < piece.LocalVertices.size(); ++index)
+        {
+            const auto& vertices = piece.LocalVertices;
+            const Vector2 incoming =
+                (vertices[(index + vertices.size() - 1) % vertices.size()] - vertices[index]).SafeUnit();
+            const Vector2 outgoing =
+                (vertices[(index + 1) % vertices.size()] - vertices[index]).SafeUnit();
+            R2_REQUIRE(incoming.Dot(outgoing) < std::cos(55.0f * Pi / 180.0f));
+        }
         fragmentArea += area;
     }
     R2_REQUIRE(NearlyEqual(intactArea, fragmentArea, 1.0e-3f));
+}
+
+R2_TEST("Mixed-size destruction preserves area and produces compact fragments")
+{
+    DestructionSet2D destruction;
+    destruction.CreateBox({0.0f, 2.0f}, {2.0f, 3.0f}, 14);
+    destruction.GetSettings().FragmentSizeVariation = 0.8f;
+    R2_REQUIRE(destruction.Fracture({0.0f, 5.0f}, 4.0f));
+    R2_REQUIRE(destruction.GetPieces().size() == 14);
+    float totalArea = 0.0f;
+    float minimumArea = std::numeric_limits<float>::max();
+    float maximumArea = 0.0f;
+    for (const DestructionPiece2D& piece : destruction.GetPieces())
+    {
+        const float area = PolygonArea2D(piece.LocalVertices);
+        const float perimeter = PolygonPerimeter(piece.LocalVertices);
+        R2_REQUIRE(area > 0.15f);
+        R2_REQUIRE(perimeter * perimeter / area < 32.0f);
+        totalArea += area;
+        minimumArea = std::min(minimumArea, area);
+        maximumArea = std::max(maximumArea, area);
+        for (std::size_t index = 0; index < piece.LocalVertices.size(); ++index)
+        {
+            const auto& vertices = piece.LocalVertices;
+            const Vector2 incoming =
+                (vertices[(index + vertices.size() - 1) % vertices.size()] - vertices[index]).SafeUnit();
+            const Vector2 outgoing =
+                (vertices[(index + 1) % vertices.size()] - vertices[index]).SafeUnit();
+            R2_REQUIRE(incoming.Dot(outgoing) < std::cos(50.0f * Pi / 180.0f));
+        }
+    }
+    R2_REQUIRE(NearlyEqual(totalArea, 24.0f, 1.0e-3f));
+    R2_REQUIRE(maximumArea > 2.5f * minimumArea);
 }
 
 R2_TEST("Physics-backed destruction fragments keep blocking projectiles")

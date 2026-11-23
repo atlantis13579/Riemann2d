@@ -16,5 +16,6 @@ namespace Riemann2D
     bool FindCompactDestructionSplit2D(const std::vector<Vector2>& polygon,
                                        int negativePieceCount, int positivePieceCount,
                                        int branch, std::vector<Vector2>& bestNegative,
-                                       std::vector<Vector2>& bestPositive);
+                                       std::vector<Vector2>& bestPositive,
+                                       float sizeVariation = 0.0f);
 }

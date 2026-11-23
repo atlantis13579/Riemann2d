@@ -39,7 +39,7 @@ namespace Riemann2D
         std::vector<Vector2> negative;
         std::vector<Vector2> positive;
         if (!FindCompactDestructionSplit2D(polygon, negativePieceCount, positivePieceCount,
-                                           branch, negative, positive))
+                                           branch, negative, positive, Settings.FragmentSizeVariation))
         {
             output.push_back(polygon);
             return;

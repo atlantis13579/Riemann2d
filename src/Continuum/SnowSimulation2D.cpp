@@ -220,13 +220,13 @@ namespace Riemann2D
         SurfaceHeight = 1.8f;
         SurfaceSampleX = -1000;
         SurfaceDirection = 0;
-        Capsule.Center.Y = SurfaceHeight * 0.8f + Capsule.HalfLength + Capsule.Radius;
+        Capsule.Center.Y = SurfaceHeight - GetScrapeDepth() + Capsule.HalfLength + Capsule.Radius;
         GatherStatistics();
     }
 
     float SnowSimulation2D::GetScrapeDepth() const
     {
-        return std::min(SurfaceHeight * 0.2f, std::max(0.0f, SurfaceHeight - Settings.FixedBedHeight));
+        return std::min(SurfaceHeight * 0.4f, std::max(0.0f, SurfaceHeight - Settings.FixedBedHeight));
     }
 
     void SnowSimulation2D::UpdateSurfaceTarget()

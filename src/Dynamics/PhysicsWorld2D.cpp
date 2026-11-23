@@ -20,14 +20,14 @@ namespace Riemann2D
         return *Bodies.back();
     }
 
-    CharacterController2D& PhysicsWorld2D::CreateCharacterController(const CharacterControllerSettings2D& settings,
-                                                                      const Vector2& position)
+    RobotController2D& PhysicsWorld2D::CreateRobotController(const RobotControllerSettings2D& settings,
+                                                              const Vector2& position)
     {
         if (!std::isfinite(position.X) || !std::isfinite(position.Y) ||
             !std::isfinite(settings.HalfExtent.X) || !std::isfinite(settings.HalfExtent.Y) ||
             settings.HalfExtent.X <= 0 || settings.HalfExtent.Y <= 0 ||
             !(settings.SlopeLimitCosine > 0 && settings.SlopeLimitCosine <= 1))
-            throw std::invalid_argument("Invalid character dimensions, slope limit or position");
+            throw std::invalid_argument("Invalid robot dimensions, slope limit or position");
 
         RigidBodyDesc2D desc;
         desc.Transform.Position = position;
@@ -36,11 +36,11 @@ namespace Riemann2D
         desc.LinearDamping = desc.Friction = desc.Restitution = 0.0f;
         auto body = std::make_unique<RigidBody2D>(desc);
         body->InverseInertia = 0.0f;
-        auto character = std::unique_ptr<CharacterController2D>(new CharacterController2D(*body, settings.SlopeLimitCosine));
-        Characters.reserve(Characters.size() + 1);
+        auto robot = std::unique_ptr<RobotController2D>(new RobotController2D(*body, settings.SlopeLimitCosine));
+        Robots.reserve(Robots.size() + 1);
         Bodies.push_back(std::move(body));
-        Characters.push_back(std::move(character));
-        return *Characters.back();
+        Robots.push_back(std::move(robot));
+        return *Robots.back();
     }
 
     IConstraint2D& PhysicsWorld2D::AddConstraint(std::unique_ptr<IConstraint2D> constraint)
@@ -72,7 +72,7 @@ namespace Riemann2D
         Contacts.clear();
         Constraints.clear();
         ForceFields.clear();
-        Characters.clear();
+        Robots.clear();
         Bodies.clear();
     }
 
@@ -84,7 +84,7 @@ namespace Riemann2D
         }
         deltaTime = std::min(deltaTime, 1.0f / 20.0f);
         const float gravityHalfStep = 0.5f * Settings.Gravity.Y * deltaTime;
-        for (auto& character : Characters) character->BeginStep(gravityHalfStep);
+        for (auto& robot : Robots) robot->BeginStep(gravityHalfStep);
         for (const std::unique_ptr<ForceField2D>& field : ForceFields)
         {
             field->Update(deltaTime);
@@ -140,8 +140,8 @@ namespace Riemann2D
             }
         }
         // With no position pass, the current contacts still describe the pre-drift poses.
-        if (!Characters.empty() && Settings.PositionIterations <= 0) FindContacts();
-        for (auto& character : Characters) character->FinishStep(gravityHalfStep, Contacts);
+        if (!Robots.empty() && Settings.PositionIterations <= 0) FindContacts();
+        for (auto& robot : Robots) robot->FinishStep(gravityHalfStep, Contacts);
     }
 
     void PhysicsWorld2D::FindContacts()
