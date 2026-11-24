@@ -114,6 +114,7 @@ KERNEL(PreparePressure)
 {
     AirParameters p = AirParams(constants); int i = (int)tid.x;
     if (i >= p.Width * p.Height) return;
+    if ((int)ReadUInt(b4,i) >= 0) { WriteFloat(b2,i,0); WriteFloat(b3,i,0); return; }
     int x = i % p.Width, y = i / p.Width;
     WriteFloat(b2, i, 0.0f);
     WriteFloat(b3, i, -(ReadFloat(b0, y * (p.Width + 1) + x + 1) - ReadFloat(b0, y * (p.Width + 1) + x)) * p.InverseX -
@@ -124,10 +125,10 @@ Level LevelParams(DATA)
 {
     Level l; l.Width = PI(data, 16); l.Height = PI(data, 17); l.WeightX = PF(data, 18); l.WeightY = PF(data, 19); return l;
 }
-float NeighborSum(BUFFER pressure, Level l, int x, int y, int i)
+float NeighborSum(BUFFER pressure, BUFFER solid, Level l, int x, int y, int i)
 {
-    return ((x > 0 ? ReadFloat(pressure, i - 1) : 0.0f) + (x + 1 < l.Width ? ReadFloat(pressure, i + 1) : 0.0f)) * l.WeightX +
-        ((y > 0 ? ReadFloat(pressure, i - l.Width) : 0.0f) + (y + 1 < l.Height ? ReadFloat(pressure, i + l.Width) : 0.0f)) * l.WeightY;
+    return ((x > 0 && (int)ReadUInt(solid,i-1) < 0 ? ReadFloat(pressure, i - 1) : 0.0f) + (x + 1 < l.Width && (int)ReadUInt(solid,i+1) < 0 ? ReadFloat(pressure, i + 1) : 0.0f)) * l.WeightX +
+        ((y > 0 && (int)ReadUInt(solid,i-l.Width) < 0 ? ReadFloat(pressure, i - l.Width) : 0.0f) + (y + 1 < l.Height && (int)ReadUInt(solid,i+l.Width) < 0 ? ReadFloat(pressure, i + l.Width) : 0.0f)) * l.WeightY;
 }
 KERNEL(Smooth)
 {
@@ -136,7 +137,7 @@ KERNEL(Smooth)
     int x = i % l.Width, y = i / l.Width;
     if (((x + y) & 1) != PI(constants, 3)) return;
     float old = ReadFloat(b0, i);
-    WriteFloat(b0, i, old + 1.15f * ((NeighborSum(b0, l, x, y, i) + ReadFloat(b1, i)) * ReadFloat(b2, i) - old));
+    WriteFloat(b0, i, old + 1.15f * ((NeighborSum(b0, b4, l, x, y, i) + ReadFloat(b1, i)) * ReadFloat(b2, i) - old));
 }
 KERNEL(SmoothCoarsest)
 {
@@ -151,8 +152,8 @@ KERNEL(SmoothCoarsest)
                 int x = i % l.Width, y = i / l.Width;
                 if (((x + y) & 1) == parity)
                 {
-                    float sum = ((x > 0 ? shared0[i - 1] : 0.0f) + (x + 1 < l.Width ? shared0[i + 1] : 0.0f)) * l.WeightX +
-                        ((y > 0 ? shared0[i - l.Width] : 0.0f) + (y + 1 < l.Height ? shared0[i + l.Width] : 0.0f)) * l.WeightY;
+                    float sum = ((x > 0 && (int)ReadUInt(b4,i-1) < 0 ? shared0[i - 1] : 0.0f) + (x + 1 < l.Width && (int)ReadUInt(b4,i+1) < 0 ? shared0[i + 1] : 0.0f)) * l.WeightX +
+                        ((y > 0 && (int)ReadUInt(b4,i-l.Width) < 0 ? shared0[i - l.Width] : 0.0f) + (y + 1 < l.Height && (int)ReadUInt(b4,i+l.Width) < 0 ? shared0[i + l.Width] : 0.0f)) * l.WeightY;
                     shared0[i] += 1.15f * ((sum + ReadFloat(b1, i)) * ReadFloat(b2, i) - shared0[i]);
                 }
             }
@@ -163,8 +164,9 @@ KERNEL(SmoothCoarsest)
 KERNEL(Residual)
 {
     Level l = LevelParams(constants); int i = (int)tid.x;
+    if (i < l.Width * l.Height && ReadFloat(b2,i) == 0) { WriteFloat(b3,i,0); return; }
     if (i < l.Width * l.Height) WriteFloat(b3, i, ReadFloat(b1, i) - ReadFloat(b0, i) / ReadFloat(b2, i) +
-        NeighborSum(b0, l, i % l.Width, i / l.Width, i));
+        NeighborSum(b0, b4, l, i % l.Width, i / l.Width, i));
 }
 KERNEL(Restrict)
 {
@@ -208,7 +210,7 @@ KERNEL(RemoveMean)
 KERNEL(Prolong)
 {
     Level fine = LevelParams(constants); int w = PI(constants, 20), h = PI(constants, 21), i = (int)tid.x;
-    if (i >= fine.Width * fine.Height) return;
+    if (i >= fine.Width * fine.Height || (int)ReadUInt(b2,i) >= 0) return;
     float value = SampleRead(b1, GridSample(w, h, (i % fine.Width + 0.5f) * w / fine.Width - 0.5f,
         (i / fine.Width + 0.5f) * h / fine.Height - 0.5f));
     WriteFloat(b0, i, ReadFloat(b0, i) + value);
@@ -231,14 +233,66 @@ KERNEL(ApplyPressure)
         WriteFloat(b1, i, value);
     }
 }
+float2 ClipTrace(float2 start, float2 end, BUFFER solid, int w, int h)
+{
+    float2 delta = end-start, previous = start;
+    int steps = max(1,(int)ceil(max(abs(delta.x),abs(delta.y))*3));
+    for (int i = 1; i <= steps; ++i)
+    {
+        float2 p = start + ((float)i/steps)*delta;
+        int x = (int)floor(p.x+.5f), y = (int)floor(p.y+.5f);
+        if (x >= 0 && x < w && y >= 0 && y < h && (int)ReadUInt(solid,y*w+x) >= 0) return previous;
+        previous = p;
+    }
+    return end;
+}
+KERNEL(CoarsenMask)
+{
+    Level l = LevelParams(constants); int i = (int)tid.x;
+    if (i >= l.Width*l.Height) return;
+    int w = PI(constants,20), h = PI(constants,21), x = 2*(i%l.Width), y = 2*(i/l.Width), solid = 0;
+    for (int dy = 0; dy < 2 && y+dy < h; ++dy)
+        for (int dx = 0; dx < 2 && x+dx < w; ++dx)
+            if ((int)ReadUInt(b0,(y+dy)*w+x+dx) < 0) solid = -1;
+    WriteUInt(b1,i,(uint)solid);
+}
+KERNEL(MaskDiagonal)
+{
+    Level l = LevelParams(constants); int i = (int)tid.x;
+    if (i >= l.Width*l.Height) return;
+    int x = i%l.Width, y = i/l.Width;
+    float diagonal = 0;
+    if ((int)ReadUInt(b0,i) < 0)
+    {
+        if (x > 0 && (int)ReadUInt(b0,i-1) < 0) diagonal += l.WeightX;
+        if (x+1 < l.Width && (int)ReadUInt(b0,i+1) < 0) diagonal += l.WeightX;
+        if (y > 0 && (int)ReadUInt(b0,i-l.Width) < 0) diagonal += l.WeightY;
+        if (y+1 < l.Height && (int)ReadUInt(b0,i+l.Width) < 0) diagonal += l.WeightY;
+    }
+    WriteFloat(b1,i,diagonal > 0 ? 1.0f/diagonal : 0);
+}
+KERNEL(DisplaceDensity)
+{
+    AirParameters p = AirParams(constants); int i = (int)tid.x;
+    if (i >= p.Width*p.Height) return;
+    float value = (int)ReadUInt(b2,i) < 0 ? ReadFloat(b0,i) : 0;
+    for (int source = (int)ReadUInt(b3,i); source >= 0; source = (int)ReadUInt(b4,source)) value += ReadFloat(b0,source);
+    WriteFloat(b1,i,value);
+}
+KERNEL(EnforceSolid)
+{
+    AirParameters p = AirParams(constants); int i = (int)tid.x;
+    if (i < (p.Width+1)*p.Height && (int)ReadUInt(b2,i) >= 0) WriteFloat(b0,i,ReadFloat(b4,i));
+    if (i < p.Width*(p.Height+1) && (int)ReadUInt(b3,i) >= 0) WriteFloat(b1,i,ReadFloat(b5,i));
+}
 KERNEL(ForwardDensity)
 {
     AirParameters p = AirParams(constants); int i = (int)tid.x;
     if (i >= p.Width * p.Height) return;
     int x = i % p.Width, y = i / p.Width; float2 velocity = Center(b1, b2, x, y, p.Width);
     WriteFloat(b4, 2 * i, velocity.x); WriteFloat(b4, 2 * i + 1, velocity.y);
-    WriteFloat(b3, i, SampleRead(b0, GridSample(p.Width, p.Height, x - p.TimeStep * p.InverseX * velocity.x,
-        y - p.TimeStep * p.InverseY * velocity.y)));
+    float2 donor = ClipTrace(float2(x,y),float2(x-p.TimeStep*p.InverseX*velocity.x,y-p.TimeStep*p.InverseY*velocity.y),b5,p.Width,p.Height);
+    WriteFloat(b3,i,(int)ReadUInt(b5,i) >= 0 ? 0 : SampleRead(b0,GridSample(p.Width,p.Height,donor.x,donor.y)));
 }
 KERNEL(CorrectDensity)
 {
@@ -249,10 +303,12 @@ KERNEL(CorrectDensity)
     float value = ReadFloat(b1, i);
     if (p.MacCormack != 0)
     {
-        float reverse = SampleRead(b1, GridSample(p.Width, p.Height, x + dx, y + dy));
-        value = SampleLimit(b0, GridSample(p.Width, p.Height, x - dx, y - dy), value + 0.5f * (ReadFloat(b0, i) - reverse));
+        float2 ahead = ClipTrace(float2(x,y),float2(x+dx,y+dy),b4,p.Width,p.Height);
+        float2 back = ClipTrace(float2(x,y),float2(x-dx,y-dy),b4,p.Width,p.Height);
+        float reverse = SampleRead(b1,GridSample(p.Width,p.Height,ahead.x,ahead.y));
+        value = SampleLimit(b0,GridSample(p.Width,p.Height,back.x,back.y), value + 0.5f * (ReadFloat(b0, i) - reverse));
     }
-    WriteFloat(b3, i, p.Decay * max(0.0f, value));
+    WriteFloat(b3, i, (int)ReadUInt(b4,i) >= 0 ? 0 : p.Decay * max(0.0f, value));
 }
 )SHADER";
 }

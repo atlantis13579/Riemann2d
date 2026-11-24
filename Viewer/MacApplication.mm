@@ -46,6 +46,8 @@
     PreviousTime = std::chrono::steady_clock::now();
     if ([NSProcessInfo.processInfo.arguments containsObject:@"snow_simulation_2d"])
         Viewer->SelectScene("snow_simulation_2d");
+    else if ([NSProcessInfo.processInfo.arguments containsObject:@"domino_chain_2d"])
+        Viewer->SelectScene("domino_chain_2d");
     PreviousMouseDown = false;
     Timer = [NSTimer scheduledTimerWithTimeInterval:1.0 / 120.0 target:self
         selector:@selector(tick:) userInfo:nil repeats:YES];

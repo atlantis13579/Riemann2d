@@ -1,5 +1,6 @@
 #include "Viewer.h"
 
+#include "DominoChainDemo.h"
 #include "FluidSurfaceBuilder.h"
 #include "SnowSurfaceBuilder.h"
 #include "GeometryBuilder.h"
@@ -22,7 +23,7 @@ namespace Riemann2D::Viewer
     {
         Width = width;
         Height = height;
-        Scenes = {{"SHAPE GALLERY"}, {"JOINT CHAIN"},
+        Scenes = {{"SHAPE GALLERY"}, {"DOMINO CHAIN"}, {"JOINT CHAIN"},
                   {"ROPE XPBD"}, {"FLUID GRAVITY"}, {"AIR NO GRAVITY"},
                   {"DESTRUCTION"}, {"RAGDOLL"}, {"SNOW"}};
         if (GetCudaBackendInfo().Available)
@@ -55,20 +56,44 @@ namespace Riemann2D::Viewer
 
     void Viewer::Tick(float deltaTime, const Render::InterfaceInput& input)
     {
+        if (!Paused) UpdateSimulation(deltaTime, input);
+        std::shared_ptr<Render::FramePacket> frame = BuildFrame(input);
+        LastSubmittedFrame = frame->FrameId;
+        frame->CapturePath = std::move(NextCapturePath);
+        NextCapturePath.clear();
+        const bool capturing = !frame->CapturePath.empty();
+        Renderer.Submit(std::move(frame));
+        if (capturing) Renderer.WaitIdle(LastSubmittedFrame);
+    }
+
+    void Viewer::UpdateSimulation(float deltaTime, const Render::InterfaceInput& input)
+    {
+        constexpr float gravity = -9.81f;
         AnimationTime += deltaTime;
         HandleFluidInteraction(input);
         ConfineFluidBodiesToTank();
-        World.SetGravity({0.0f, Gravity});
-        if (Fluid) Fluid->GetSettings().Gravity = {0.0f, Gravity};
+        World.SetGravity({0.0f, gravity});
+        if (Fluid) Fluid->GetSettings().Gravity = {0.0f, gravity};
         World.SetContactSolver(SelectedSolver == 0 ? ContactSolverType2D::SequentialImpulse
                                                    : ContactSolverType2D::LCP,
                                SelectedBackend == 0 ? SolverBackend2D::ScalarCPU
                                                     : SolverBackend2D::SIMDCPU);
-        if (!Air) World.Step(deltaTime);
+        if (SelectedScene == DominoChainScene)
+        {
+            // Keep the launcher and thin domino contacts independent of rendering cadence.
+            constexpr float step = 1.0f / 240.0f;
+            DominoTimeAccumulator += Clamp(deltaTime, 0.0f, 0.05f);
+            while (DominoTimeAccumulator >= step)
+            {
+                World.Step(step);
+                DominoTimeAccumulator -= step;
+            }
+        }
+        else if (!Air) World.Step(deltaTime);
         ConfineFluidBodiesToTank();
         if (Rope)
         {
-            Rope->GetSettings().Gravity = {0.0f, Gravity};
+            Rope->GetSettings().Gravity = {0.0f, gravity};
             Rope->Step(deltaTime);
         }
         const auto simulationStart = std::chrono::steady_clock::now();
@@ -91,7 +116,7 @@ namespace Riemann2D::Viewer
         }
         if (Snow)
         {
-            Snow->GetSettings().Gravity = {0, Gravity};
+            Snow->GetSettings().Gravity = {0, gravity};
             if (input.MouseX > 260) Snow->SetCapsuleTarget(ScreenToWorld(input).X);
             Snow->Step(deltaTime);
         }
@@ -109,13 +134,6 @@ namespace Riemann2D::Viewer
                 Destruction->Fracture({0.0f, 5.0f}, 4.0f);
             Destruction->Step(deltaTime);
         }
-        std::shared_ptr<Render::FramePacket> frame = BuildFrame(input);
-        LastSubmittedFrame = frame->FrameId;
-        frame->CapturePath = std::move(NextCapturePath);
-        NextCapturePath.clear();
-        const bool capturing = !frame->CapturePath.empty();
-        Renderer.Submit(std::move(frame));
-        if (capturing) Renderer.WaitIdle(LastSubmittedFrame);
     }
 
     std::shared_ptr<Render::FramePacket> Viewer::BuildFrame(const Render::InterfaceInput& input)
@@ -136,12 +154,22 @@ namespace Riemann2D::Viewer
             if (Interface.Button(Scenes[index].Name, SelectedScene == static_cast<int>(index)))
             {
                 SelectedScene = static_cast<int>(index);
-                AnimationTime = 0.0f;
                 RebuildPhysicsScene();
                 SceneListExpanded = false;
             }
         }
-        Interface.Label("PARAMETERS");
+        Interface.Separator();
+        if (Interface.Button("RESTART")) RebuildPhysicsScene();
+        if (Interface.Button(Paused ? "RESUME" : "PAUSE"))
+        {
+            Paused = !Paused;
+            if (Paused) CancelFluidInteraction();
+        }
+        Interface.Separator();
+        if (SelectedScene == DominoChainScene)
+        {
+            Interface.Label("SEESAW > DOMINOES > TRAY", {0.65f, 0.78f, 0.92f, 1.0f});
+        }
         if (SelectedScene == FluidScene)
         {
             Interface.Label("LMB BODY: DRAG", {0.65f, 0.78f, 0.92f, 1.0f});
@@ -160,7 +188,6 @@ namespace Riemann2D::Viewer
                 ShowAirVelocity = !ShowAirVelocity;
             Interface.Label("LMB: INJECT SMOKE", {0.65f, 0.78f, 0.92f, 1.0f});
         }
-        if (SelectedScene != AirScene && !Snow) Interface.Slider("GRAVITY", Gravity, -20.0f, 0.0f);
         if (Snow) BuildSnowUI();
         else if (Fluid || Air)
         {
@@ -183,6 +210,12 @@ namespace Riemann2D::Viewer
             if (Interface.Button("SIMD CPU", SelectedBackend == 1)) SelectedBackend = 1;
         }
         Interface.Label("DX11 METAL RHI", {0.48f, 0.55f, 0.68f, 1.0f});
+
+        if (SelectedScene == DominoChainScene)
+        {
+            frame->Camera.Center = {10.0f, 7.0f};
+            frame->Camera.VerticalSize = std::max(17.0f, 31.0f * Height / std::max(Width - 260, 1));
+        }
 
         frame->WorldDraws.push_back(BuildGridDraw());
         if (Fluid && RenderFluidSurface)
@@ -215,11 +248,11 @@ namespace Riemann2D::Viewer
     {
         for (std::size_t index = 0; index < Scenes.size(); ++index)
         {
-            if (Scenes[index].Name == name || (name == "snow_simulation_2d" && index == SnowScene))
+            if (Scenes[index].Name == name || (name == "snow_simulation_2d" && index == SnowScene) ||
+                (name == "domino_chain_2d" && index == DominoChainScene))
             {
                 SelectedScene = static_cast<int>(index);
                 SceneListExpanded = false;
-                AnimationTime = 0;
                 RebuildPhysicsScene();
                 return true;
             }
@@ -234,7 +267,6 @@ namespace Riemann2D::Viewer
         char depth[80];
         std::snprintf(depth, sizeof(depth), "SNOW %.2F M / CUT %.2F M", Snow->GetSurfaceHeight(), Snow->GetScrapeDepth());
         Interface.Label(depth);
-        if (Interface.Button("RESET SNOW BED")) Snow->Reset(SnowQuality);
         if (Interface.Button(SnowQuality == ContinuumQuality::Realtime ? "QUALITY: REALTIME" : "QUALITY: HIGH DETAIL"))
         {
             SnowQuality = SnowQuality == ContinuumQuality::Realtime ? ContinuumQuality::High : ContinuumQuality::Realtime;
@@ -408,10 +440,18 @@ namespace Riemann2D::Viewer
         grid.DebugName = "XY grid";
         grid.Topology = Render::PrimitiveTopology::Lines;
         const Render::Color gridColor{0.09f, 0.12f, 0.17f, 1.0f};
-        for (int coordinate = -10; coordinate <= 10; ++coordinate)
+        const int minimumX = SelectedScene == DominoChainScene ? -6 : -10;
+        const int maximumX = SelectedScene == DominoChainScene ? 26 : 10;
+        const int maximumY = SelectedScene == DominoChainScene ? 16 : 12;
+        for (int coordinate = minimumX; coordinate <= maximumX; ++coordinate)
         {
-            AddLine(grid, {static_cast<float>(coordinate), -4.0f}, {static_cast<float>(coordinate), 12.0f}, gridColor);
-            AddLine(grid, {-10.0f, static_cast<float>(coordinate)}, {10.0f, static_cast<float>(coordinate)}, gridColor);
+            AddLine(grid, {static_cast<float>(coordinate), -4.0f},
+                    {static_cast<float>(coordinate), static_cast<float>(maximumY)}, gridColor);
+        }
+        for (int coordinate = -10; coordinate <= (SelectedScene == DominoChainScene ? 16 : 10); ++coordinate)
+        {
+            AddLine(grid, {static_cast<float>(minimumX), static_cast<float>(coordinate)},
+                    {static_cast<float>(maximumX), static_cast<float>(coordinate)}, gridColor);
         }
         if (Rope)
         {
@@ -609,10 +649,13 @@ namespace Riemann2D::Viewer
 
     void Viewer::RebuildPhysicsScene()
     {
+        Paused = false;
+        AnimationTime = 0.0f;
         CancelFluidInteraction();
         Ragdoll.reset();
         Destruction.reset();
         World.Clear();
+        DominoTimeAccumulator = 0.0f;
         Rope.reset();
         Fluid.reset();
         FluidTankWalls.clear();
@@ -667,6 +710,12 @@ namespace Riemann2D::Viewer
             body.Transform.Position = {3.4f, 8.2f};
             body.Transform.Angle = -0.15f;
             World.CreateBody(body);
+            return;
+        }
+
+        if (SelectedScene == DominoChainScene)
+        {
+            BuildDominoChainDemo(World);
             return;
         }
 

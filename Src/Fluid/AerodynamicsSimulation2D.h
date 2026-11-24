@@ -98,13 +98,15 @@ namespace Riemann2D
 
     private:
         void ApplyRigidBodyForces();
-        // Shared solid-boundary correction for CPU, CUDA and Compute Shader flow.
+        // Geometry input for all backends and the CPU boundary solver.
         class RigidBoundaryState
         {
         public:
             void Update(const PhysicsWorld2D* world, Vector2 minimum, Vector2 cellSize,
-                        int width, int height, std::vector<float>& density);
+                        int width, int height);
+            void DisplaceDensity(std::vector<float>& density) const;
             bool Active() const;
+            AirBoundaryData GetGpuData() const { return {Solid, DisplacementHead, DisplacementNext, BlockU, BlockV, VelocityU, VelocityV}; }
             bool IsSolid(int x, int y) const;
             Vector2 ClipTrace(Vector2 start, Vector2 end) const;
             float ExteriorValue(const std::vector<float>& values, int index) const;
@@ -116,7 +118,7 @@ namespace Riemann2D
         private:
             int Width = 0, Height = 0, SolidCount = 0;
             Vector2 CellSize{1,1};
-            std::vector<int> Solid, NearestFluid, BlockU, BlockV;
+            std::vector<int> Solid, NearestFluid, DisplacementHead, DisplacementNext, BlockU, BlockV;
             std::vector<float> VelocityU, VelocityV;
             std::vector<double> Diagonal, Correction, Residual, Direction, Product, Preconditioned;
             std::vector<double> RightWeight, UpWeight, Factor, Forward;
@@ -136,7 +138,7 @@ namespace Riemann2D
 
         Vector2 SampleGridVelocity(float x, float y) const;
         void AdvectVelocity(float deltaTime);
-        bool StepGpu(float deltaTime, bool projectOnly);
+        bool StepGpu(float deltaTime, bool projectOnly, bool synchronizeOnly = false);
         void ProjectVelocityCPU();
         void AdvectDensity(float deltaTime);
         void ApplyVorticity(float deltaTime);

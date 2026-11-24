@@ -178,7 +178,9 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="F:\src\Riemann2d\Viewer\DominoChainDemo.cpp" />
     <ClCompile Include="F:\src\Riemann2d\Viewer\FluidSurfaceBuilder.cpp" />
+    <ClInclude Include="F:\src\Riemann2d\Viewer\DominoChainDemo.h" />
     <ClInclude Include="F:\src\Riemann2d\Viewer\FluidSurfaceBuilder.h" />
     <ClCompile Include="F:\src\Riemann2d\Viewer\GeometryBuilder.cpp" />
     <ClInclude Include="F:\src\Riemann2d\Viewer\GeometryBuilder.h" />

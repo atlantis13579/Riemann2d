@@ -31,6 +31,7 @@ namespace Riemann2D::Viewer
         enum SceneIndex
         {
             ShapeGalleryScene,
+            DominoChainScene,
             JointChainScene,
             RopeScene,
             FluidScene,
@@ -54,6 +55,7 @@ namespace Riemann2D::Viewer
         std::shared_ptr<Render::FramePacket> BuildFrame(const Render::InterfaceInput& input);
         Render::DrawPacket BuildWorldDraw() const;
         Render::DrawPacket BuildGridDraw() const;
+        void UpdateSimulation(float deltaTime, const Render::InterfaceInput& input);
         void RebuildPhysicsScene();
         void HandleFluidInteraction(const Render::InterfaceInput& input);
         void CancelFluidInteraction();
@@ -77,15 +79,16 @@ namespace Riemann2D::Viewer
         bool RenderFluidSurface = true;
         bool ShowAirVelocity = false;
         bool SceneListExpanded = true;
+        bool Paused = false;
         ContinuumQuality SnowQuality = ContinuumQuality::Realtime;
         std::unique_ptr<SnowSimulation2D> Snow;
-        float Gravity = -9.81f;
         float AnimationTime = 0.0f;
         float SimulationMilliseconds = 0.0f;
         FluidComputeBackend PreferredFluidBackend = FluidComputeBackend::CPU;
         FluidComputeBackend PreferredAirBackend = FluidComputeBackend::CPU;
         std::string NextCapturePath;
         PhysicsWorld2D World;
+        float DominoTimeAccumulator = 0.0f;
         std::unique_ptr<RopeSimulation2D> Rope;
         std::unique_ptr<FluidSimulation2D> Fluid;
         std::vector<FluidTankWall> FluidTankWalls;

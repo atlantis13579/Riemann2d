@@ -89,6 +89,8 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int showCo
     if (!state.Viewer.Initialize(window, client.right - client.left, client.bottom - client.top)) return 3;
     if (std::wstring(commandLine).find(L"snow_simulation_2d") != std::wstring::npos)
         state.Viewer.SelectScene("snow_simulation_2d");
+    else if (std::wstring(commandLine).find(L"domino_chain_2d") != std::wstring::npos)
+        state.Viewer.SelectScene("domino_chain_2d");
 
     auto previous = std::chrono::steady_clock::now();
     MSG message{};

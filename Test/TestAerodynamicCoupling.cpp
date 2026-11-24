@@ -230,3 +230,46 @@ R2_TEST("Smoke rigid boundary blocks cross-wall transport on every backend")
         R2_REQUIRE(air.ComputeMeanAbsoluteDivergence() < 0.001f);
     }
 }
+
+R2_TEST("Smoke masked projection updates moving obstacles and resized GPU grids")
+{
+    for (auto backend : {FluidComputeBackend::CPU, FluidComputeBackend::CUDA, FluidComputeBackend::ComputeShader})
+    {
+        PhysicsWorld2D world;
+        RigidBodyDesc2D desc; desc.Type = BodyType2D::Static;
+        desc.Shape = std::make_shared<Box2>(Vector2{0.4f, 0.7f});
+        auto& obstacle = world.CreateBody(desc);
+        AerodynamicsSimulation2D air;
+        air.GetSettings().PressureIterations = 64;
+        if (!air.SetBackend(backend)) continue;
+        for (const auto size : {Vector2{65, 49}, Vector2{161, 97}})
+        {
+            R2_REQUIRE(air.Initialize({-4, -3}, {4, 3}, static_cast<int>(size.X), static_cast<int>(size.Y)));
+            for (int phase = 0; phase < 4; ++phase)
+            {
+                obstacle.SetTransform({{0.3f * phase, 0.1f * phase}, 0.2f * phase});
+                air.SetRigidBodies(phase == 2 ? nullptr : &world);
+                air.AddEmitter({-1, 0}, 0.8f, 4, {3, 0.6f}, 1.0f / 60);
+                air.ProjectVelocity();
+                R2_REQUIRE(air.GetBackend() == backend);
+                R2_REQUIRE(air.GetBackendError().empty());
+                R2_REQUIRE(air.GetMaximumBoundaryVelocityError() < 1.e-6f);
+                R2_REQUIRE(air.ComputeMeanAbsoluteDivergence() < 0.001f);
+                for (int y = 0; y < air.GetHeight(); ++y)
+                    for (int x = 0; x < air.GetWidth(); ++x)
+                    {
+                        R2_REQUIRE(std::isfinite(air.SamplePressure(air.GetCellCenter(x, y))));
+                        R2_REQUIRE(std::isfinite(air.GetDensity(x, y)));
+                    }
+            }
+        }
+        // A fully covered domain has no pressure unknowns or density destinations.
+        desc.Shape = std::make_shared<Box2>(Vector2{10, 10});
+        world.CreateBody(desc);
+        air.SynchronizeRigidBodies();
+        air.Step(1.0f / 60);
+        R2_REQUIRE(air.GetBackend() == backend);
+        R2_REQUIRE(air.ComputeMeanAbsoluteDivergence() == 0);
+        for (float density : air.GetDensityField()) R2_REQUIRE(density == 0);
+    }
+}

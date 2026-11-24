@@ -163,7 +163,9 @@ namespace Riemann2D
 
     void AerodynamicsSimulation2D::SynchronizeRigidBodies()
     {
-        RigidBoundary.Update(RigidWorld, BoundsMinimum, CellSize, Width, Height, Density);
+        RigidBoundary.Update(RigidWorld, BoundsMinimum, CellSize, Width, Height);
+        if (RigidBoundary.Active() && StepGpu(0, true, true)) return;
+        RigidBoundary.DisplaceDensity(Density);
         RigidBoundary.EnforceVelocity(U, V);
     }
 
@@ -489,21 +491,16 @@ namespace Riemann2D
         if (!Width || deltaTime <= 0.0f || !std::isfinite(deltaTime)) return;
         deltaTime = std::min(deltaTime, std::max(Settings.MaximumTimeStep, 1.0e-5f));
         ProjectionTimeStep = deltaTime;
-        if (RigidWorld) SynchronizeRigidBodies();
-        // GPU flow remains accelerated; shared boundary projection and transport
-        // enforce the same impermeability rule on every backend.
-        const std::vector<float> previousDensity = RigidBoundary.Active() ? Density : std::vector<float>{};
+        if (RigidWorld) RigidBoundary.Update(RigidWorld, BoundsMinimum, CellSize, Width, Height);
         if (StepGpu(deltaTime, false))
         {
-            if (!RigidBoundary.Active())
-            {
-                ApplyRigidBodyForces();
-                return;
-            }
-            Density = previousDensity;
+            ApplyRigidBodyForces();
+            return;
         }
         else
         {
+            RigidBoundary.DisplaceDensity(Density);
+            RigidBoundary.EnforceVelocity(U,V);
             AdvectVelocity(deltaTime);
             ApplyVorticity(deltaTime);
             ProjectVelocityCPU();
@@ -531,13 +528,15 @@ namespace Riemann2D
         return true;
     }
 
-    bool AerodynamicsSimulation2D::StepGpu(float deltaTime, bool projectOnly)
+    bool AerodynamicsSimulation2D::StepGpu(float deltaTime, bool projectOnly, bool synchronizeOnly)
     {
         if (Backend == FluidComputeBackend::CPU || !Width) return false;
         if (!GpuSolver.Instance) GpuSolver.Instance = Backend == FluidComputeBackend::CUDA ?
             CreateCudaAirSolver() : CreateComputeAirSolver();
+        const auto boundary = RigidBoundary.GetGpuData();
         if (GpuSolver.Instance && GpuSolver.Instance->Step(Settings, CellSize, Width, Height,
-            deltaTime, projectOnly, Density, U, V, PressureLevels.front().Pressure, BackendError)) return true;
+            deltaTime, projectOnly, RigidBoundary.Active() ? &boundary : nullptr, synchronizeOnly,
+            Density, U, V, PressureLevels.front().Pressure, BackendError)) return true;
         if (BackendError.empty()) BackendError = "GPU backend creation failed";
         Backend = FluidComputeBackend::CPU;
         GpuSolver.Instance.reset();
@@ -548,9 +547,14 @@ namespace Riemann2D
     {
         if (!std::isfinite(deltaTime) || deltaTime <= 0.0f) return;
         ProjectionTimeStep = deltaTime;
-        if (RigidWorld) SynchronizeRigidBodies();
-        if (!StepGpu(0.0f, true)) ProjectVelocityCPU();
-        if (Width) RigidBoundary.Project(U,V,PressureLevels.front().Pressure);
+        if (RigidWorld) RigidBoundary.Update(RigidWorld, BoundsMinimum, CellSize, Width, Height);
+        if (!StepGpu(0.0f, true))
+        {
+            RigidBoundary.DisplaceDensity(Density);
+            RigidBoundary.EnforceVelocity(U,V);
+            ProjectVelocityCPU();
+            if (Width) RigidBoundary.Project(U,V,PressureLevels.front().Pressure);
+        }
     }
 
     float AerodynamicsSimulation2D::ComputeMeanAbsoluteDivergence() const
@@ -707,7 +711,7 @@ namespace Riemann2D
     }
 
     void AerodynamicsSimulation2D::RigidBoundaryState::Update(const PhysicsWorld2D* world, Vector2 minimum, Vector2 cellSize,
-                                   int width, int height, std::vector<float>& density)
+                                   int width, int height)
     {
         Width = width; Height = height; CellSize = cellSize; SolidCount = 0;
         if (!world || !width || world->GetBodies().empty()) { Solid.clear(); return; }
@@ -754,12 +758,14 @@ namespace Riemann2D
                                y > 0 ? i - width : i, y + 1 < height ? i + width : i})
                 if (NearestFluid[n] < 0) { NearestFluid[n] = NearestFluid[i]; queue.push_back(n); }
         }
-        // Moving solids displace covered smoke into the nearest exterior cell.
+        // Geometry-only gather lists let every GPU thread own one output cell.
+        DisplacementHead.assign(count,-1); DisplacementNext.assign(count,-1);
         for (int i = 0; i < count; ++i)
-            if (Solid[i] >= 0)
+            if (Solid[i] >= 0 && NearestFluid[i] >= 0)
             {
-                if (NearestFluid[i] >= 0) density[NearestFluid[i]] += density[i];
-                density[i] = 0;
+                const int target = NearestFluid[i];
+                DisplacementNext[i] = DisplacementHead[target];
+                DisplacementHead[target] = i;
             }
         const auto velocity = [&](int b, Vector2 p)
         {
@@ -781,6 +787,17 @@ namespace Riemann2D
                 if (b < 0) continue;
                 const int i = y * width + x; BlockV[i] = b;
                 VelocityV[i] = velocity(b, minimum + Vector2{(x + 0.5f) * cellSize.X, y * cellSize.Y}).Y;
+            }
+    }
+
+    void AerodynamicsSimulation2D::RigidBoundaryState::DisplaceDensity(std::vector<float>& density) const
+    {
+        if (!Active()) return;
+        for (std::size_t i = 0; i < density.size(); ++i)
+            if (Solid[i] >= 0)
+            {
+                if (NearestFluid[i] >= 0) density[NearestFluid[i]] += density[i];
+                density[i] = 0;
             }
     }
 

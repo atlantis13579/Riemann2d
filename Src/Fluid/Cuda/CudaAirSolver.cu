@@ -21,6 +21,7 @@ namespace Riemann2D
             int Width, Height;
             float WeightX, WeightY;
             float *Pressure, *RHS, *Residual, *InverseDiagonal, *Mean;
+            int* Solid;
         };
         struct Sample
         {
@@ -120,14 +121,15 @@ namespace Riemann2D
             const int i = blockIdx.x * blockDim.x + threadIdx.x;
             if (i >= p.Width * p.Height) return;
             const int x = i % p.Width, y = i / p.Width;
+            if (level.Solid[i] >= 0) { level.Pressure[i] = level.RHS[i] = 0; return; }
             level.Pressure[i] = 0.0f;
             level.RHS[i] = -(u[y * (p.Width + 1) + x + 1] - u[y * (p.Width + 1) + x]) * p.InverseX -
                            (v[(y + 1) * p.Width + x] - v[y * p.Width + x]) * p.InverseY;
         }
         __device__ float NeighborSum(const float* pressure, Level l, int x, int y, int i)
         {
-            return ((x > 0 ? pressure[i - 1] : 0.0f) + (x + 1 < l.Width ? pressure[i + 1] : 0.0f)) * l.WeightX +
-                   ((y > 0 ? pressure[i - l.Width] : 0.0f) + (y + 1 < l.Height ? pressure[i + l.Width] : 0.0f)) * l.WeightY;
+            return ((x > 0 && l.Solid[i - 1] < 0 ? pressure[i - 1] : 0.0f) + (x + 1 < l.Width && l.Solid[i + 1] < 0 ? pressure[i + 1] : 0.0f)) * l.WeightX +
+                   ((y > 0 && l.Solid[i - l.Width] < 0 ? pressure[i - l.Width] : 0.0f) + (y + 1 < l.Height && l.Solid[i + l.Width] < 0 ? pressure[i + l.Width] : 0.0f)) * l.WeightY;
         }
         __global__ void Smooth(Level level, int parity)
         {
@@ -161,6 +163,7 @@ namespace Riemann2D
         {
             const int i = blockIdx.x * blockDim.x + threadIdx.x;
             if (i >= level.Width * level.Height) return;
+            if (level.InverseDiagonal[i] == 0) { level.Residual[i] = 0; return; }
             level.Residual[i] = level.RHS[i] - level.Pressure[i] / level.InverseDiagonal[i] +
                 NeighborSum(level.Pressure, level, i % level.Width, i / level.Width, i);
         }
@@ -195,7 +198,7 @@ namespace Riemann2D
         __global__ void Prolong(Level fine, Level coarse)
         {
             const int i = blockIdx.x * blockDim.x + threadIdx.x;
-            if (i >= fine.Width * fine.Height) return;
+            if (i >= fine.Width * fine.Height || fine.Solid[i] >= 0) return;
             fine.Pressure[i] += Sample(coarse.Width, coarse.Height,
                 (i % fine.Width + 0.5f) * coarse.Width / fine.Width - 0.5f,
                 (i / fine.Width + 0.5f) * coarse.Height / fine.Height - 0.5f).Read(coarse.Pressure);
@@ -217,19 +220,32 @@ namespace Riemann2D
                 else v[i] = 0.0f;
             }
         }
+        __device__ Float2 ClipTrace(Float2 start, Float2 end, const int* solid, int w, int h)
+        {
+            Float2 delta = end - start, previous = start;
+            int steps = max(1, (int)ceilf(fmaxf(fabsf(delta.X),fabsf(delta.Y))*3));
+            for (int i = 1; i <= steps; ++i)
+            {
+                Float2 p = start + ((float)i/steps)*delta;
+                int x = (int)floorf(p.X+.5f), y = (int)floorf(p.Y+.5f);
+                if (x >= 0 && x < w && y >= 0 && y < h && solid[y*w+x] >= 0) return previous;
+                previous = p;
+            }
+            return end;
+        }
         __global__ void ForwardDensity(const float* density, const float* u, const float* v, float* forward,
-                                       Float2* centers, const AirParameters* parameters)
+                                       Float2* centers, const int* solid, const AirParameters* parameters)
         {
             const AirParameters p = *parameters;
             const int i = blockIdx.x * blockDim.x + threadIdx.x;
             if (i >= p.Width * p.Height) return;
             const int x = i % p.Width, y = i / p.Width;
             const Float2 velocity = Center(u, v, x, y, p.Width); centers[i] = velocity;
-            forward[i] = Sample(p.Width, p.Height, x - p.TimeStep * p.InverseX * velocity.X,
-                y - p.TimeStep * p.InverseY * velocity.Y).Read(density);
+            const auto donor = ClipTrace({(float)x,(float)y}, {x-p.TimeStep*p.InverseX*velocity.X,y-p.TimeStep*p.InverseY*velocity.Y}, solid, p.Width,p.Height);
+            forward[i] = solid[i] >= 0 ? 0 : Sample(p.Width,p.Height,donor.X,donor.Y).Read(density);
         }
         __global__ void CorrectDensity(const float* density, const float* forward, const Float2* centers,
-                                       float* target, const AirParameters* parameters)
+                                       float* target, const int* solid, const AirParameters* parameters)
         {
             const AirParameters p = *parameters;
             const int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -239,15 +255,55 @@ namespace Riemann2D
             float value = forward[i];
             if (p.MacCormack)
             {
-                const float reverse = Sample(p.Width, p.Height, x + dx, y + dy).Read(forward);
-                value = Sample(p.Width, p.Height, x - dx, y - dy).Limit(value + 0.5f * (density[i] - reverse), density);
+                const auto ahead = ClipTrace({(float)x,(float)y},{x+dx,y+dy},solid,p.Width,p.Height);
+                const auto back = ClipTrace({(float)x,(float)y},{x-dx,y-dy},solid,p.Width,p.Height);
+                const float reverse = Sample(p.Width,p.Height,ahead.X,ahead.Y).Read(forward);
+                value = Sample(p.Width,p.Height,back.X,back.Y).Limit(value + 0.5f * (density[i] - reverse), density);
             }
-            target[i] = p.Decay * fmaxf(0.0f, value);
+            target[i] = solid[i] >= 0 ? 0 : p.Decay * fmaxf(0.0f, value);
         }
 
+        __global__ void CoarsenMask(Level fine, Level coarse)
+        {
+            int i = blockIdx.x * blockDim.x + threadIdx.x;
+            if (i >= coarse.Width * coarse.Height) return;
+            int x = 2 * (i % coarse.Width), y = 2 * (i / coarse.Width), solid = 0;
+            for (int dy = 0; dy < 2 && y + dy < fine.Height; ++dy)
+                for (int dx = 0; dx < 2 && x + dx < fine.Width; ++dx)
+                    if (fine.Solid[(y + dy) * fine.Width + x + dx] < 0) solid = -1;
+            coarse.Solid[i] = solid;
+        }
+        __global__ void MaskDiagonal(Level l)
+        {
+            int i = blockIdx.x * blockDim.x + threadIdx.x;
+            if (i >= l.Width * l.Height) return;
+            int x = i % l.Width, y = i / l.Width;
+            float diagonal = l.Solid[i] >= 0 ? 0 :
+                ((x > 0 && l.Solid[i-1] < 0) + (x+1 < l.Width && l.Solid[i+1] < 0)) * l.WeightX +
+                ((y > 0 && l.Solid[i-l.Width] < 0) + (y+1 < l.Height && l.Solid[i+l.Width] < 0)) * l.WeightY;
+            l.InverseDiagonal[i] = diagonal > 0 ? 1.0f / diagonal : 0;
+        }
+        __global__ void DisplaceDensity(const float* density, float* result, const int* solid,
+                                        const int* head, const int* next, int count)
+        {
+            int i = blockIdx.x*blockDim.x+threadIdx.x;
+            if (i >= count) return;
+            float value = solid[i] < 0 ? density[i] : 0;
+            for (int source = head[i]; source >= 0; source = next[source]) value += density[source];
+            result[i] = value;
+        }
+        __global__ void EnforceSolid(float* u, float* v, const int* bu, const int* bv,
+                                    const float* vu, const float* vv, const AirParameters* parameters)
+        {
+            const auto p = *parameters;
+            int i = blockIdx.x * blockDim.x + threadIdx.x;
+            if (i < (p.Width+1)*p.Height && bu[i] >= 0) u[i] = vu[i];
+            if (i < p.Width*(p.Height+1) && bv[i] >= 0) v[i] = vv[i];
+        }
         struct LevelBuffers
         {
             Buffer<float> Pressure, RHS, Residual, InverseDiagonal, Mean;
+            Buffer<int> Solid;
         };
         struct Graph
         {
@@ -261,6 +317,9 @@ namespace Riemann2D
             Buffer<float> U, V, UScratch, VScratch, Density, Forward, DensityScratch, Curl;
             Buffer<Float2> Centers, Force;
             Buffer<AirParameters> Parameters;
+            Buffer<int> BlockU, BlockV, DisplacementHead, DisplacementNext;
+            Buffer<float> BoundaryU, BoundaryV;
+            bool HasBoundary = false;
             std::vector<LevelBuffers> Storage;
             std::vector<Level> Levels;
             std::vector<float> ReadU, ReadV, ReadDensity;
@@ -278,11 +337,21 @@ namespace Riemann2D
                 Level coarse = Levels[index + 1];
                 Check(cudaMemsetAsync(coarse.Mean, 0, sizeof(float), Queue.Handle));
                 Restrict<<<Blocks(coarse.Width * coarse.Height), 256, 0, Queue.Handle>>>(level, coarse);
-                RemoveMean<<<Blocks(coarse.Width * coarse.Height), 256, 0, Queue.Handle>>>(coarse);
+                if (!HasBoundary) RemoveMean<<<Blocks(coarse.Width * coarse.Height), 256, 0, Queue.Handle>>>(coarse);
                 Cycle(index + 1);
                 Prolong<<<Blocks(level.Width * level.Height), 256, 0, Queue.Handle>>>(level, coarse);
                 for (int iteration = 0; iteration < 2; ++iteration)
                     for (int parity = 0; parity < 2; ++parity) Smooth<<<Blocks(level.Width * level.Height), 256, 0, Queue.Handle>>>(level, parity);
+            }
+            void SynchronizeBoundary()
+            {
+                if (!HasBoundary) return;
+                const int n = Width*Height;
+                DisplaceDensity<<<Blocks(n),256,0,Queue.Handle>>>(Density.Data,DensityScratch.Data,
+                    Storage[0].Solid.Data,DisplacementHead.Data,DisplacementNext.Data,n);
+                Check(cudaMemcpyAsync(Density.Data,DensityScratch.Data,n*sizeof(float),cudaMemcpyDeviceToDevice,Queue.Handle));
+                EnforceSolid<<<Blocks(std::max((Width+1)*Height,Width*(Height+1))),256,0,Queue.Handle>>>(
+                    U.Data,V.Data,BlockU.Data,BlockV.Data,BoundaryU.Data,BoundaryV.Data,Parameters.Data);
             }
             void Capture(Graph& graph, bool projectOnly)
             {
@@ -291,6 +360,7 @@ namespace Riemann2D
                 try
                 {
                     const int n = Width * Height, nu = (Width + 1) * Height, nv = Width * (Height + 1);
+                    SynchronizeBoundary();
                     if (!projectOnly)
                     {
                         AdvectFaces<<<Blocks(nu), 256, 0, Queue.Handle>>>(U.Data, V.Data, UScratch.Data, 0, Parameters.Data);
@@ -302,13 +372,22 @@ namespace Riemann2D
                         ComputeForce<<<Blocks(n), 256, 0, Queue.Handle>>>(Curl.Data, Force.Data, Parameters.Data);
                         ApplyForce<<<Blocks(std::max(nu, nv)), 256, 0, Queue.Handle>>>(U.Data, V.Data, Force.Data, Parameters.Data);
                     }
+                    if (HasBoundary)
+                        EnforceSolid<<<Blocks(std::max(nu,nv)),256,0,Queue.Handle>>>(U.Data,V.Data,BlockU.Data,BlockV.Data,BoundaryU.Data,BoundaryV.Data,Parameters.Data);
+                    for (std::size_t l = 0; l < Levels.size(); ++l)
+                    {
+                        if (l) CoarsenMask<<<Blocks(Levels[l].Width*Levels[l].Height),256,0,Queue.Handle>>>(Levels[l-1],Levels[l]);
+                        MaskDiagonal<<<Blocks(Levels[l].Width*Levels[l].Height),256,0,Queue.Handle>>>(Levels[l]);
+                    }
                     PreparePressure<<<Blocks(n), 256, 0, Queue.Handle>>>(U.Data, V.Data, Levels[0], Parameters.Data);
                     for (int iteration = 0; iteration < Cycles; ++iteration) Cycle(0);
                     ApplyPressure<<<Blocks(std::max(nu, nv)), 256, 0, Queue.Handle>>>(U.Data, V.Data, Levels[0].Pressure, Parameters.Data);
+                    if (HasBoundary)
+                        EnforceSolid<<<Blocks(std::max(nu,nv)),256,0,Queue.Handle>>>(U.Data,V.Data,BlockU.Data,BlockV.Data,BoundaryU.Data,BoundaryV.Data,Parameters.Data);
                     if (!projectOnly)
                     {
-                        ForwardDensity<<<Blocks(n), 256, 0, Queue.Handle>>>(Density.Data, U.Data, V.Data, Forward.Data, Centers.Data, Parameters.Data);
-                        CorrectDensity<<<Blocks(n), 256, 0, Queue.Handle>>>(Density.Data, Forward.Data, Centers.Data, DensityScratch.Data, Parameters.Data);
+                        ForwardDensity<<<Blocks(n), 256, 0, Queue.Handle>>>(Density.Data, U.Data, V.Data, Forward.Data, Centers.Data, Storage[0].Solid.Data, Parameters.Data);
+                        CorrectDensity<<<Blocks(n), 256, 0, Queue.Handle>>>(Density.Data, Forward.Data, Centers.Data, DensityScratch.Data, Storage[0].Solid.Data, Parameters.Data);
                         Check(cudaMemcpyAsync(Density.Data, DensityScratch.Data, n * sizeof(float), cudaMemcpyDeviceToDevice, Queue.Handle));
                     }
                     Check(cudaGetLastError());
@@ -333,6 +412,8 @@ namespace Riemann2D
                 U.Reserve(nu); V.Reserve(nv); UScratch.Reserve(nu); VScratch.Reserve(nv);
                 Density.Reserve(n); Forward.Reserve(n); DensityScratch.Reserve(n); Curl.Reserve(n);
                 Centers.Reserve(n); Force.Reserve(n); Parameters.Reserve(1);
+                DisplacementHead.Reserve(n); DisplacementNext.Reserve(n);
+                BlockU.Reserve(nu); BlockV.Reserve(nv); BoundaryU.Reserve(nu); BoundaryV.Reserve(nv);
                 ReadU.resize(nu); ReadV.resize(nv); ReadDensity.resize(n);
                 const Vector2 extent{width * cellSize.X, height * cellSize.Y};
                 for (;;)
@@ -340,6 +421,7 @@ namespace Riemann2D
                     Storage.emplace_back(); auto& storage = Storage.back();
                     const int count = width * height;
                     storage.Pressure.Reserve(count); storage.RHS.Reserve(count); storage.Residual.Reserve(count);
+                    storage.Solid.Reserve(count);
                     storage.InverseDiagonal.Reserve(count); storage.Mean.Reserve(1);
                     const float inverseX = width / extent.X, inverseY = height / extent.Y;
                     const float wx = inverseX * inverseX, wy = inverseY * inverseY;
@@ -349,22 +431,23 @@ namespace Riemann2D
                             inverse[y * width + x] = 1.0f / (((x > 0) + (x + 1 < width)) * wx + ((y > 0) + (y + 1 < height)) * wy);
                     Check(cudaMemcpy(storage.InverseDiagonal.Data, inverse.data(), count * sizeof(float), cudaMemcpyHostToDevice));
                     Levels.push_back({width, height, wx, wy, storage.Pressure.Data, storage.RHS.Data,
-                        storage.Residual.Data, storage.InverseDiagonal.Data, storage.Mean.Data});
+                        storage.Residual.Data, storage.InverseDiagonal.Data, storage.Mean.Data, storage.Solid.Data});
                     if (width <= 4 && height <= 4) break;
                     width = (width + 1) / 2; height = (height + 1) / 2;
                 }
             }
         public:
             bool Step(const AerodynamicsSettings2D& settings, const Vector2& cellSize,
-                      int width, int height, float deltaTime, bool projectOnly, std::vector<float>& density,
+                      int width, int height, float deltaTime, bool projectOnly, const AirBoundaryData* boundary, bool synchronizeOnly, std::vector<float>& density,
                       std::vector<float>& u, std::vector<float>& v, std::vector<float>& pressure, std::string& error) override
             {
                 try
                 {
                     Check(cudaSetDevice(GetCudaBackendInfo().DeviceIndex)); Queue.Initialize();
-                    const int cycles = std::max(1, (settings.PressureIterations + 7) / 8);
+                    const int cycles = std::max(boundary ? 24 : 1, (settings.PressureIterations + 7) / 8);
                     if (width != Width || height != Height || cellSize.X != CellSize.X || cellSize.Y != CellSize.Y)
                         Resize(width, height, cellSize);
+                    if (HasBoundary != (boundary != nullptr)) { StepGraph.Reset(); ProjectionGraph.Reset(); HasBoundary = boundary != nullptr; }
                     if (Cycles != cycles) { StepGraph.Reset(); ProjectionGraph.Reset(); Cycles = cycles; }
                     const AirParameters p{width, height, 1.0f / cellSize.X, 1.0f / cellSize.Y, deltaTime,
                         std::max(settings.VelocityDiffusion, 0.0f), settings.VorticityStrength,
@@ -372,17 +455,32 @@ namespace Riemann2D
                     Check(cudaMemcpyAsync(Parameters.Data, &p, sizeof(p), cudaMemcpyHostToDevice, Queue.Handle));
                     Check(cudaMemcpyAsync(U.Data, u.data(), u.size() * sizeof(float), cudaMemcpyHostToDevice, Queue.Handle));
                     Check(cudaMemcpyAsync(V.Data, v.data(), v.size() * sizeof(float), cudaMemcpyHostToDevice, Queue.Handle));
-                    if (!projectOnly) Check(cudaMemcpyAsync(Density.Data, density.data(), density.size() * sizeof(float), cudaMemcpyHostToDevice, Queue.Handle));
-                    Graph& graph = projectOnly ? ProjectionGraph : StepGraph;
-                    if (!graph.Instance) Capture(graph, projectOnly);
-                    Check(cudaGraphLaunch(graph.Instance, Queue.Handle));
+                    Check(cudaMemcpyAsync(Density.Data, density.data(), density.size() * sizeof(float), cudaMemcpyHostToDevice, Queue.Handle));
+                    if (boundary)
+                    {
+                        Check(cudaMemcpyAsync(DisplacementHead.Data,boundary->DisplacementHead.data(),width*height*sizeof(int),cudaMemcpyHostToDevice,Queue.Handle));
+                        Check(cudaMemcpyAsync(DisplacementNext.Data,boundary->DisplacementNext.data(),width*height*sizeof(int),cudaMemcpyHostToDevice,Queue.Handle));
+                        Check(cudaMemcpyAsync(Storage[0].Solid.Data,boundary->Solid.data(),width*height*sizeof(int),cudaMemcpyHostToDevice,Queue.Handle));
+                        Check(cudaMemcpyAsync(BlockU.Data,boundary->BlockU.data(),u.size()*sizeof(int),cudaMemcpyHostToDevice,Queue.Handle));
+                        Check(cudaMemcpyAsync(BlockV.Data,boundary->BlockV.data(),v.size()*sizeof(int),cudaMemcpyHostToDevice,Queue.Handle));
+                        Check(cudaMemcpyAsync(BoundaryU.Data,boundary->VelocityU.data(),u.size()*sizeof(float),cudaMemcpyHostToDevice,Queue.Handle));
+                        Check(cudaMemcpyAsync(BoundaryV.Data,boundary->VelocityV.data(),v.size()*sizeof(float),cudaMemcpyHostToDevice,Queue.Handle));
+                    }
+                    else Check(cudaMemsetAsync(Storage[0].Solid.Data,255,width*height*sizeof(int),Queue.Handle));
+                    if (synchronizeOnly) SynchronizeBoundary();
+                    else
+                    {
+                        Graph& graph = projectOnly ? ProjectionGraph : StepGraph;
+                        if (!graph.Instance) Capture(graph, projectOnly);
+                        Check(cudaGraphLaunch(graph.Instance, Queue.Handle));
+                    }
                     pressure.resize(static_cast<std::size_t>(width) * height);
-                    Check(cudaMemcpyAsync(pressure.data(), Levels[0].Pressure, pressure.size() * sizeof(float), cudaMemcpyDeviceToHost, Queue.Handle));
+                    if (!synchronizeOnly) Check(cudaMemcpyAsync(pressure.data(), Levels[0].Pressure, pressure.size() * sizeof(float), cudaMemcpyDeviceToHost, Queue.Handle));
                     Check(cudaMemcpyAsync(ReadU.data(), U.Data, u.size() * sizeof(float), cudaMemcpyDeviceToHost, Queue.Handle));
                     Check(cudaMemcpyAsync(ReadV.data(), V.Data, v.size() * sizeof(float), cudaMemcpyDeviceToHost, Queue.Handle));
-                    if (!projectOnly) Check(cudaMemcpyAsync(ReadDensity.data(), Density.Data, density.size() * sizeof(float), cudaMemcpyDeviceToHost, Queue.Handle));
+                    Check(cudaMemcpyAsync(ReadDensity.data(), Density.Data, density.size() * sizeof(float), cudaMemcpyDeviceToHost, Queue.Handle));
                     Check(cudaStreamSynchronize(Queue.Handle));
-                    u.swap(ReadU); v.swap(ReadV); if (!projectOnly) density.swap(ReadDensity);
+                    u.swap(ReadU); v.swap(ReadV); density.swap(ReadDensity);
                     error.clear(); return true;
                 }
                 catch (const std::exception& exception)

@@ -95,6 +95,14 @@ namespace Riemann2D::Render
         return hovered && Input.MousePressed;
     }
 
+    void ImmediateUI::Separator()
+    {
+        const float y = CursorY + 7.0f;
+        AddRectangle(12.0f, y, static_cast<float>(PanelWidth - 12), y + 1.0f,
+                     {0.2f, 0.24f, 0.32f, 1.0f});
+        CursorY += 20.0f;
+    }
+
     bool ImmediateUI::Slider(const std::string& text, float& value, float minimum, float maximum)
     {
         Label(text);
