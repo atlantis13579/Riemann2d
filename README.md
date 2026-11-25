@@ -40,7 +40,7 @@ Riemann2D is a 2D physics engine with zero dependencies. It is the 2D version of
 
 #### 2D Rigid Body Dynamics
 
-https://github.com/user-attachments/assets/fe19c59c-058a-4796-9857-c108ccd24e3a
+https://github.com/user-attachments/assets/7e1a0d57-10d1-4537-bd5e-84f0a1c11d3b
 
 #### 2D Articulated Dynamics
 
