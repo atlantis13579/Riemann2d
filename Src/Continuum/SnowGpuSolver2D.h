@@ -13,5 +13,6 @@ namespace Riemann2D
     };
 
     std::unique_ptr<SnowGpuSolver2D> CreateCudaSnowSolver2D();
-    std::unique_ptr<SnowGpuSolver2D> CreateComputeSnowSolver2D();
+    std::unique_ptr<SnowGpuSolver2D> CreateDX11SnowSolver2D();
+    std::unique_ptr<SnowGpuSolver2D> CreateMetalSnowSolver2D();
 }

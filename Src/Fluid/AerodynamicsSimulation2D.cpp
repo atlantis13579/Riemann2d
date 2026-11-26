@@ -1,6 +1,6 @@
 #include "AerodynamicsSimulation2D.h"
 #include "Cuda/CudaSolvers.h"
-#include "Compute/ComputeSolvers.h"
+
 
 #include "Maths/Maths.h"
 #include "Dynamics/PhysicsWorld2D.h"
@@ -513,16 +513,8 @@ namespace Riemann2D
     bool AerodynamicsSimulation2D::SetBackend(FluidComputeBackend backend)
     {
         BackendError.clear();
-        if (backend == FluidComputeBackend::ComputeShader && !GetComputeShaderBackendInfo().Available)
-        {
-            BackendError = GetComputeShaderBackendInfo().Message;
-            return false;
-        }
-        if (backend == FluidComputeBackend::CUDA && !GetCudaBackendInfo().Available)
-        {
-            BackendError = GetCudaBackendInfo().Message;
-            return false;
-        }
+        const auto& availability = GetOperatorAvailability(GpuOperator::Air, backend);
+        if (!availability.Available) { BackendError = availability.Message; return false; }
         if (Backend != backend) GpuSolver.Instance.reset();
         Backend = backend;
         return true;
@@ -532,7 +524,7 @@ namespace Riemann2D
     {
         if (Backend == FluidComputeBackend::CPU || !Width) return false;
         if (!GpuSolver.Instance) GpuSolver.Instance = Backend == FluidComputeBackend::CUDA ?
-            CreateCudaAirSolver() : CreateComputeAirSolver();
+            CreateCudaAirSolver() : Backend == FluidComputeBackend::Metal ? CreateMetalAirSolver() : CreateDX11AirSolver();
         const auto boundary = RigidBoundary.GetGpuData();
         if (GpuSolver.Instance && GpuSolver.Instance->Step(Settings, CellSize, Width, Height,
             deltaTime, projectOnly, RigidBoundary.Active() ? &boundary : nullptr, synchronizeOnly,

@@ -51,19 +51,21 @@ namespace Riemann2D::Render
         }
     }
 
-    void ImmediateUI::Begin(int width, int height, int panelWidth, const InterfaceInput& input)
+    void ImmediateUI::Begin(int width, int height, int panelWidth, const InterfaceInput& input,
+                            float displayScale)
     {
         (void)width;
         Draw = {};
         Draw.DebugName = "ImmediateUI";
         Draw.Topology = PrimitiveTopology::Triangles;
         Input = input;
-        PanelWidth = panelWidth;
+        DisplayScale = displayScale > 0.0f ? displayScale : 1.0f;
+        PanelWidth = static_cast<float>(panelWidth) / DisplayScale;
         CursorY = 18.0f;
-        AddRectangle(0.0f, 0.0f, static_cast<float>(panelWidth), static_cast<float>(height),
+        AddRectangle(0.0f, 0.0f, PanelWidth, static_cast<float>(height) / DisplayScale,
                      {0.055f, 0.065f, 0.09f, 1.0f});
-        AddRectangle(static_cast<float>(panelWidth - 1), 0.0f, static_cast<float>(panelWidth),
-                     static_cast<float>(height), {0.2f, 0.24f, 0.32f, 1.0f});
+        AddRectangle(PanelWidth - 1.0f, 0.0f, PanelWidth,
+                     static_cast<float>(height) / DisplayScale, {0.2f, 0.24f, 0.32f, 1.0f});
     }
 
     void ImmediateUI::Label(const std::string& text, const Color& color)
@@ -82,6 +84,7 @@ namespace Riemann2D::Render
         const float bottom = top + 28.0f;
         const bool hovered = enabled && IsHovered(left, top, right, bottom);
         Color color = selected ? Color{0.15f, 0.42f, 0.7f, 1.0f} : Color{0.11f, 0.13f, 0.18f, 1.0f};
+        if (!enabled) color = {0.12f, 0.12f, 0.12f, 1.0f};
         if (hovered)
         {
             color = selected ? Color{0.2f, 0.5f, 0.8f, 1.0f} : Color{0.18f, 0.21f, 0.29f, 1.0f};
@@ -90,7 +93,7 @@ namespace Riemann2D::Render
         const float scale = std::min(2.0f, (right - left - 18.0f) /
             (6.0f * static_cast<float>(std::max<std::size_t>(text.size(), 1))));
         AddText(left + 9.0f, top + 7.0f, text, enabled ? Color{0.92f, 0.94f, 0.98f, 1.0f}
-                                                     : Color{0.38f, 0.42f, 0.48f, 1.0f}, scale);
+                                                     : Color{0.40f, 0.40f, 0.40f, 1.0f}, scale);
         CursorY = bottom + 6.0f;
         return hovered && Input.MousePressed;
     }
@@ -113,7 +116,8 @@ namespace Riemann2D::Render
         bool changed = false;
         if (IsHovered(left, top, right, bottom) && Input.MouseDown)
         {
-            const float fraction = Clamp((static_cast<float>(Input.MouseX) - left) / (right - left), 0.0f, 1.0f);
+            const float fraction = Clamp((static_cast<float>(Input.MouseX) / DisplayScale - left) /
+                (right - left), 0.0f, 1.0f);
             value = minimum + fraction * (maximum - minimum);
             changed = true;
         }
@@ -130,6 +134,10 @@ namespace Riemann2D::Render
 
     DrawPacket ImmediateUI::End()
     {
+        for (Vertex& vertex : Draw.Vertices)
+        {
+            vertex.Position *= DisplayScale;
+        }
         return std::move(Draw);
     }
 
@@ -166,7 +174,8 @@ namespace Riemann2D::Render
 
     bool ImmediateUI::IsHovered(float left, float top, float right, float bottom) const
     {
-        return static_cast<float>(Input.MouseX) >= left && static_cast<float>(Input.MouseX) <= right &&
-               static_cast<float>(Input.MouseY) >= top && static_cast<float>(Input.MouseY) <= bottom;
+        const float mouseX = static_cast<float>(Input.MouseX) / DisplayScale;
+        const float mouseY = static_cast<float>(Input.MouseY) / DisplayScale;
+        return mouseX >= left && mouseX <= right && mouseY >= top && mouseY <= bottom;
     }
 }

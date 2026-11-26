@@ -40,4 +40,8 @@ namespace Riemann2D
                           std::vector<float>& density, std::vector<float>& u,
                           std::vector<float>& v, std::vector<float>& pressure, std::string& error) = 0;
     };
+    std::unique_ptr<FluidGpuSolver> CreateDX11FluidSolver();
+    std::unique_ptr<FluidGpuSolver> CreateMetalFluidSolver();
+    std::unique_ptr<AirGpuSolver> CreateDX11AirSolver();
+    std::unique_ptr<AirGpuSolver> CreateMetalAirSolver();
 }

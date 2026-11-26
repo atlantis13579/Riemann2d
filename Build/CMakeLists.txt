@@ -41,39 +41,41 @@ else()
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-find_package(Threads REQUIRED)
-
 file(GLOB_RECURSE RIEMANN2D_SOURCES CONFIGURE_DEPENDS
-    "${RIEMANN2D_ROOT_DIR}/src/*.cpp"
-    "${RIEMANN2D_ROOT_DIR}/src/*.cc"
-    "${RIEMANN2D_ROOT_DIR}/src/*.c"
+    "${RIEMANN2D_ROOT_DIR}/Src/*.cpp"
+    "${RIEMANN2D_ROOT_DIR}/Src/*.cc"
+    "${RIEMANN2D_ROOT_DIR}/Src/*.c"
 )
 
 file(GLOB_RECURSE RIEMANN2D_HEADERS CONFIGURE_DEPENDS
-    "${RIEMANN2D_ROOT_DIR}/src/*.h"
-    "${RIEMANN2D_ROOT_DIR}/src/*.hpp"
+    "${RIEMANN2D_ROOT_DIR}/Src/*.h"
+    "${RIEMANN2D_ROOT_DIR}/Src/*.hpp"
 )
 
 add_library(Riemann2D STATIC ${RIEMANN2D_SOURCES} ${RIEMANN2D_HEADERS})
-target_include_directories(Riemann2D PUBLIC "${RIEMANN2D_ROOT_DIR}/src")
+target_include_directories(Riemann2D PUBLIC "${RIEMANN2D_ROOT_DIR}/Src")
 target_compile_features(Riemann2D PUBLIC cxx_std_17)
 
-option(RIEMANN2D_ENABLE_COMPUTE_SHADER "Build native DX11/Metal compute fluid solvers" ON)
-if(RIEMANN2D_ENABLE_COMPUTE_SHADER)
-    if(WIN32)
-        target_compile_definitions(Riemann2D PRIVATE RIEMANN2D_HAS_COMPUTE_SHADER=1)
-        target_link_libraries(Riemann2D PRIVATE d3d11 d3dcompiler dxgi)
-    elseif(APPLE)
-        enable_language(OBJCXX)
-        target_sources(Riemann2D PRIVATE "${RIEMANN2D_ROOT_DIR}/src/Fluid/Compute/MetalComputeDevice.mm")
-        set_property(TARGET Riemann2D PROPERTY OBJCXX_STANDARD 17)
-        set_source_files_properties("${RIEMANN2D_ROOT_DIR}/src/Fluid/Compute/MetalComputeDevice.mm"
-            PROPERTIES COMPILE_FLAGS "-fobjc-arc")
-        target_compile_definitions(Riemann2D PRIVATE RIEMANN2D_HAS_COMPUTE_SHADER=1)
-        find_library(COMPUTE_METAL_FRAMEWORK Metal REQUIRED)
-        find_library(COMPUTE_FOUNDATION_FRAMEWORK Foundation REQUIRED)
-        target_link_libraries(Riemann2D PRIVATE ${COMPUTE_METAL_FRAMEWORK} ${COMPUTE_FOUNDATION_FRAMEWORK})
-    endif()
+option(RIEMANN2D_ENABLE_COMPUTE_SHADER "Build native DirectCompute solvers" ON)
+option(RIEMANN2D_ENABLE_METAL "Build native Metal solvers" ON)
+if(WIN32 AND RIEMANN2D_ENABLE_COMPUTE_SHADER)
+    target_compile_definitions(Riemann2D PRIVATE RIEMANN2D_HAS_DX11=1)
+    target_link_libraries(Riemann2D PRIVATE d3d11 d3dcompiler dxgi)
+endif()
+if(APPLE AND RIEMANN2D_ENABLE_METAL)
+    enable_language(OBJCXX)
+    set(RIEMANN2D_METAL_SOURCES
+        "${RIEMANN2D_ROOT_DIR}/Src/Fluid/Metal/MetalBackend.mm"
+        "${RIEMANN2D_ROOT_DIR}/Src/Fluid/Metal/MetalFluidSolver.mm"
+        "${RIEMANN2D_ROOT_DIR}/Src/Fluid/Metal/MetalAirSolver.mm"
+        "${RIEMANN2D_ROOT_DIR}/Src/Continuum/Metal/MetalSnowSolver.mm")
+    target_sources(Riemann2D PRIVATE ${RIEMANN2D_METAL_SOURCES})
+    set_property(TARGET Riemann2D PROPERTY OBJCXX_STANDARD 17)
+    set_source_files_properties(${RIEMANN2D_METAL_SOURCES} PROPERTIES COMPILE_FLAGS "-fobjc-arc")
+    target_compile_definitions(Riemann2D PRIVATE RIEMANN2D_HAS_METAL=1)
+    find_library(RIEMANN2D_METAL_FRAMEWORK Metal REQUIRED)
+    find_library(RIEMANN2D_FOUNDATION_FRAMEWORK Foundation REQUIRED)
+    target_link_libraries(Riemann2D PRIVATE ${RIEMANN2D_METAL_FRAMEWORK} ${RIEMANN2D_FOUNDATION_FRAMEWORK})
 endif()
 
 option(RIEMANN2D_ENABLE_CUDA "Build optional CUDA fluid solvers when a toolkit is available" ON)
@@ -100,14 +102,14 @@ if(RIEMANN2D_ENABLE_CUDA AND NOT APPLE)
                 COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/Cuda/$<CONFIG>"
                 COMMAND "${CUDAToolkit_NVCC_EXECUTABLE}" --std=c++17 -O3 --fmad=false
                     ${cuda_architecture_flags} ${cuda_host_flags} -ccbin "${CMAKE_CXX_COMPILER}"
-                    "-I${RIEMANN2D_ROOT_DIR}/src" -c "${RIEMANN2D_ROOT_DIR}/src/${cuda_path}.cu"
+                    "-I${RIEMANN2D_ROOT_DIR}/Src" -c "${RIEMANN2D_ROOT_DIR}/Src/${cuda_path}.cu"
                     -o "${cuda_object}"
-                DEPENDS "${RIEMANN2D_ROOT_DIR}/src/${cuda_path}.cu"
+                DEPENDS "${RIEMANN2D_ROOT_DIR}/Src/${cuda_path}.cu"
                     ${RIEMANN2D_HEADERS}
-                    "${RIEMANN2D_ROOT_DIR}/src/Fluid/Cuda/CudaCommon.cuh"
-                    "${RIEMANN2D_ROOT_DIR}/src/Fluid/Cuda/CudaSolvers.h"
-                    "${RIEMANN2D_ROOT_DIR}/src/Fluid/FluidSimulation2D.h"
-                    "${RIEMANN2D_ROOT_DIR}/src/Fluid/AerodynamicsSimulation2D.h"
+                    "${RIEMANN2D_ROOT_DIR}/Src/Fluid/Cuda/CudaCommon.cuh"
+                    "${RIEMANN2D_ROOT_DIR}/Src/Fluid/Cuda/CudaSolvers.h"
+                    "${RIEMANN2D_ROOT_DIR}/Src/Fluid/FluidSimulation2D.h"
+                    "${RIEMANN2D_ROOT_DIR}/Src/Fluid/AerodynamicsSimulation2D.h"
                 VERBATIM)
             set_source_files_properties("${cuda_object}" PROPERTIES GENERATED TRUE EXTERNAL_OBJECT TRUE)
             target_sources(Riemann2D PRIVATE "${cuda_object}")
@@ -177,6 +179,7 @@ elseif(APPLE)
 endif()
 
 if(RIEMANN2D_BUILD_VIEWER AND (WIN32 OR APPLE))
+    find_package(Threads REQUIRED)
     if(WIN32)
         add_executable(Viewer WIN32
             ${RIEMANN2D_VIEWER_COMMON_SOURCES}
@@ -215,7 +218,7 @@ if(RIEMANN2D_BUILD_VIEWER AND (WIN32 OR APPLE))
     target_include_directories(Viewer PRIVATE
         "${RIEMANN2D_ROOT_DIR}/Viewer"
         "${RIEMANN2D_ROOT_DIR}/Viewer/Render"
-        "${RIEMANN2D_ROOT_DIR}/src"
+        "${RIEMANN2D_ROOT_DIR}/Src"
     )
     target_compile_features(Viewer PUBLIC cxx_std_17)
 endif()
@@ -230,20 +233,16 @@ if(RIEMANN2D_BUILD_TESTS)
 
     add_executable(Riemann2DTests
         ${RIEMANN2D_TEST_SOURCES}
-        ${RIEMANN2D_VIEWER_RENDER_SOURCES}
-        "${RIEMANN2D_ROOT_DIR}/Viewer/FluidSurfaceBuilder.cpp"
     )
     target_include_directories(Riemann2DTests PRIVATE
         "${RIEMANN2D_ROOT_DIR}/Test"
-        "${RIEMANN2D_ROOT_DIR}/Viewer"
-        "${RIEMANN2D_ROOT_DIR}/Viewer/Render"
-        "${RIEMANN2D_ROOT_DIR}/src"
+        "${RIEMANN2D_ROOT_DIR}/Src"
     )
-    target_link_libraries(Riemann2DTests PRIVATE Riemann2D Threads::Threads)
+    target_link_libraries(Riemann2DTests PRIVATE Riemann2D)
     add_test(NAME Riemann2DTests COMMAND Riemann2DTests)
 endif()
 
-source_group(TREE "${RIEMANN2D_ROOT_DIR}/src" PREFIX "Src"
+source_group(TREE "${RIEMANN2D_ROOT_DIR}/Src" PREFIX "Src"
     FILES ${RIEMANN2D_SOURCES} ${RIEMANN2D_HEADERS})
 
 source_group(TREE "${RIEMANN2D_ROOT_DIR}/Viewer" PREFIX "Viewer"

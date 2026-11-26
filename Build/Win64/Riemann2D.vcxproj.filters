@@ -34,6 +34,15 @@
     <ClCompile Include="F:\src\Riemann2d\Src\Collision\TriangleMesh2.cpp">
       <Filter>Src\Collision</Filter>
     </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Continuum\DX11\DX11SnowSolver.cpp">
+      <Filter>Src\Continuum\DX11</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Continuum\SnowGpuBackends2D.cpp">
+      <Filter>Src\Continuum</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Continuum\SnowSimulation2D.cpp">
+      <Filter>Src\Continuum</Filter>
+    </ClCompile>
     <ClCompile Include="F:\src\Riemann2d\Src\Destruction\DestructionCut2D.cpp">
       <Filter>Src\Destruction</Filter>
     </ClCompile>
@@ -61,26 +70,29 @@
     <ClCompile Include="F:\src\Riemann2d\Src\Dynamics\RigidBody2D.cpp">
       <Filter>Src\Dynamics</Filter>
     </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Dynamics\RobotController2D.cpp">
+      <Filter>Src\Dynamics</Filter>
+    </ClCompile>
     <ClCompile Include="F:\src\Riemann2d\Src\Dynamics\SequentialImpulseSolver2D.cpp">
       <Filter>Src\Dynamics</Filter>
     </ClCompile>
     <ClCompile Include="F:\src\Riemann2d\Src\Fluid\AerodynamicsSimulation2D.cpp">
       <Filter>Src\Fluid</Filter>
     </ClCompile>
-    <ClCompile Include="F:\src\Riemann2d\Src\Fluid\Compute\ComputeAirSolver.cpp">
-      <Filter>Src\Fluid\Compute</Filter>
-    </ClCompile>
-    <ClCompile Include="F:\src\Riemann2d\Src\Fluid\Compute\ComputeDevice.cpp">
-      <Filter>Src\Fluid\Compute</Filter>
-    </ClCompile>
-    <ClCompile Include="F:\src\Riemann2d\Src\Fluid\Compute\ComputeFluidSolver.cpp">
-      <Filter>Src\Fluid\Compute</Filter>
-    </ClCompile>
-    <ClCompile Include="F:\src\Riemann2d\Src\Fluid\Compute\DX11ComputeDevice.cpp">
-      <Filter>Src\Fluid\Compute</Filter>
+    <ClCompile Include="F:\src\Riemann2d\Src\Fluid\BackendAvailability.cpp">
+      <Filter>Src\Fluid</Filter>
     </ClCompile>
     <ClCompile Include="F:\src\Riemann2d\Src\Fluid\Cuda\CudaBackend.cpp">
       <Filter>Src\Fluid\Cuda</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Fluid\DX11\DX11AirSolver.cpp">
+      <Filter>Src\Fluid\DX11</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Fluid\DX11\DX11Backend.cpp">
+      <Filter>Src\Fluid\DX11</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Src\Fluid\DX11\DX11FluidSolver.cpp">
+      <Filter>Src\Fluid\DX11</Filter>
     </ClCompile>
     <ClCompile Include="F:\src\Riemann2d\Src\Fluid\FluidRigidCoupling2D.cpp">
       <Filter>Src\Fluid</Filter>
@@ -132,6 +144,27 @@
     <ClInclude Include="F:\src\Riemann2d\Src\Collision\TriangleMesh2.h">
       <Filter>Src\Collision</Filter>
     </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Compute\DX11Compute.h">
+      <Filter>Src\Compute</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Compute\MetalCompute.h">
+      <Filter>Src\Compute</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Continuum\DX11\SnowDX11Kernels.h">
+      <Filter>Src\Continuum\DX11</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Continuum\Metal\SnowMetalKernels.h">
+      <Filter>Src\Continuum\Metal</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Continuum\MpmMaterial2D.h">
+      <Filter>Src\Continuum</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Continuum\SnowGpuSolver2D.h">
+      <Filter>Src\Continuum</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Continuum\SnowSimulation2D.h">
+      <Filter>Src\Continuum</Filter>
+    </ClInclude>
     <ClInclude Include="F:\src\Riemann2d\Src\Destruction\DestructionCut2D.h">
       <Filter>Src\Destruction</Filter>
     </ClInclude>
@@ -165,29 +198,23 @@
     <ClInclude Include="F:\src\Riemann2d\Src\Dynamics\RigidBody2D.h">
       <Filter>Src\Dynamics</Filter>
     </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Dynamics\RobotController2D.h">
+      <Filter>Src\Dynamics</Filter>
+    </ClInclude>
     <ClInclude Include="F:\src\Riemann2d\Src\Dynamics\SequentialImpulseSolver2D.h">
       <Filter>Src\Dynamics</Filter>
     </ClInclude>
     <ClInclude Include="F:\src\Riemann2d\Src\Fluid\AerodynamicsSimulation2D.h">
       <Filter>Src\Fluid</Filter>
     </ClInclude>
-    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\Compute\AirComputeShaders.h">
-      <Filter>Src\Fluid\Compute</Filter>
-    </ClInclude>
-    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\Compute\ComputeDevice.h">
-      <Filter>Src\Fluid\Compute</Filter>
-    </ClInclude>
-    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\Compute\ComputeShaderSource.h">
-      <Filter>Src\Fluid\Compute</Filter>
-    </ClInclude>
-    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\Compute\ComputeSolvers.h">
-      <Filter>Src\Fluid\Compute</Filter>
-    </ClInclude>
-    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\Compute\FluidComputeShaders.h">
-      <Filter>Src\Fluid\Compute</Filter>
-    </ClInclude>
     <ClInclude Include="F:\src\Riemann2d\Src\Fluid\Cuda\CudaSolvers.h">
       <Filter>Src\Fluid\Cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\DX11\AirDX11Kernels.h">
+      <Filter>Src\Fluid\DX11</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\DX11\FluidDX11Kernels.h">
+      <Filter>Src\Fluid\DX11</Filter>
     </ClInclude>
     <ClInclude Include="F:\src\Riemann2d\Src\Fluid\FluidComputeBackend.h">
       <Filter>Src\Fluid</Filter>
@@ -200,6 +227,12 @@
     </ClInclude>
     <ClInclude Include="F:\src\Riemann2d\Src\Fluid\GpuFluidSolvers.h">
       <Filter>Src\Fluid</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\Metal\AirMetalKernels.h">
+      <Filter>Src\Fluid\Metal</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\src\Riemann2d\Src\Fluid\Metal\FluidMetalKernels.h">
+      <Filter>Src\Fluid\Metal</Filter>
     </ClInclude>
     <ClInclude Include="F:\src\Riemann2d\Src\Fluid\ParticleGrid2D.h">
       <Filter>Src\Fluid</Filter>
@@ -224,6 +257,9 @@
     <CustomBuild Include="F:\src\Riemann2d\Build\Win64\CMakeFiles\ac15b920c8717a3400d16b8b53a8f738\CudaAirSolver.obj.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
+    <CustomBuild Include="F:\src\Riemann2d\Build\Win64\CMakeFiles\ac15b920c8717a3400d16b8b53a8f738\CudaSnowSolver2D.obj.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
     <CustomBuild Include="F:\src\Riemann2d\Build\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
@@ -233,10 +269,16 @@
     <Object Include="F:\src\Riemann2d\Build\Win64\Cuda\Debug\CudaAirSolver.obj">
       <Filter>Object Files</Filter>
     </Object>
+    <Object Include="F:\src\Riemann2d\Build\Win64\Cuda\Debug\CudaSnowSolver2D.obj">
+      <Filter>Object Files</Filter>
+    </Object>
     <Object Include="F:\src\Riemann2d\Build\Win64\Cuda\Release\CudaFluidSolver.obj">
       <Filter>Object Files</Filter>
     </Object>
     <Object Include="F:\src\Riemann2d\Build\Win64\Cuda\Release\CudaAirSolver.obj">
+      <Filter>Object Files</Filter>
+    </Object>
+    <Object Include="F:\src\Riemann2d\Build\Win64\Cuda\Release\CudaSnowSolver2D.obj">
       <Filter>Object Files</Filter>
     </Object>
   </ItemGroup>
@@ -253,6 +295,18 @@
     <Filter Include="Src\Collision">
       <UniqueIdentifier>{8EC33347-6221-3D26-9773-F420B8F55121}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Src\Compute">
+      <UniqueIdentifier>{1A592CF2-ABA2-3B42-8B25-E22F65F71D01}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Continuum">
+      <UniqueIdentifier>{C3B2DE57-A3E7-317A-B6DF-CBCE21F84BF6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Continuum\DX11">
+      <UniqueIdentifier>{5CDA7281-5BCA-3E13-8AC9-66E40EB40328}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Continuum\Metal">
+      <UniqueIdentifier>{DAA5663A-41AF-3B8B-A059-EB2B17A3C855}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Src\Destruction">
       <UniqueIdentifier>{CBC0198F-5BED-3FB1-A793-BA9F950D3CD5}</UniqueIdentifier>
     </Filter>
@@ -262,11 +316,14 @@
     <Filter Include="Src\Fluid">
       <UniqueIdentifier>{F646168E-7274-37BC-ADB6-1564A40BCA8F}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Src\Fluid\Compute">
-      <UniqueIdentifier>{35833F0B-40F4-38DC-93DF-E1E0B4B8FB23}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Src\Fluid\Cuda">
       <UniqueIdentifier>{0F7134C6-E549-3149-A1BC-5953404FD955}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Fluid\DX11">
+      <UniqueIdentifier>{2DDFB8FD-2138-3001-B00B-D05B244A6B4F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Fluid\Metal">
+      <UniqueIdentifier>{D09B34CB-E6B4-3C57-AD9E-2CDF01131F00}</UniqueIdentifier>
     </Filter>
     <Filter Include="Src\Maths">
       <UniqueIdentifier>{7D6DAF36-D789-36C2-A6A4-224C18BDDBA1}</UniqueIdentifier>

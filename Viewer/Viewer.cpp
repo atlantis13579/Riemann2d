@@ -26,10 +26,14 @@ namespace Riemann2D::Viewer
         Scenes = {{"SHAPE GALLERY"}, {"DOMINO CHAIN"}, {"JOINT CHAIN"},
                   {"ROPE XPBD"}, {"FLUID GRAVITY"}, {"AIR NO GRAVITY"},
                   {"DESTRUCTION"}, {"RAGDOLL"}, {"SNOW"}};
-        if (GetCudaBackendInfo().Available)
-            PreferredFluidBackend = PreferredAirBackend = FluidComputeBackend::CUDA;
-        else if (GetComputeShaderBackendInfo().Available)
-            PreferredFluidBackend = PreferredAirBackend = FluidComputeBackend::ComputeShader;
+        ProbeGpuOperators();
+        for (auto backend : {FluidComputeBackend::CUDA, FluidComputeBackend::Metal, FluidComputeBackend::ComputeShader})
+        {
+            if (PreferredFluidBackend == FluidComputeBackend::CPU && GetOperatorAvailability(GpuOperator::Liquid, backend).Available)
+                PreferredFluidBackend = backend;
+            if (PreferredAirBackend == FluidComputeBackend::CPU && GetOperatorAvailability(GpuOperator::Air, backend).Available)
+                PreferredAirBackend = backend;
+        }
         RebuildPhysicsScene();
 
         Render::NativeWindow window;
@@ -52,6 +56,16 @@ namespace Riemann2D::Viewer
             Height = height;
             Renderer.Resize(width, height);
         }
+    }
+
+    void Viewer::SetDisplayScale(float scale)
+    {
+        DisplayScale = std::isfinite(scale) && scale > 0.0f ? scale : 1.0f;
+    }
+
+    int Viewer::GetPanelWidth() const
+    {
+        return std::max(1, static_cast<int>(std::lround(260.0f * DisplayScale)));
     }
 
     void Viewer::Tick(float deltaTime, const Render::InterfaceInput& input)
@@ -108,7 +122,7 @@ namespace Riemann2D::Viewer
                 {3.4f, 0.85f * std::sin(AnimationTime * 1.7f)}, sourceStep);
             Air->AddEmitter({2.8f, -0.5f}, 0.55f, 3.5f,
                 {-0.65f + 0.5f * std::sin(AnimationTime), 3.0f}, sourceStep);
-            if (input.MouseDown && input.MouseX > 260)
+            if (input.MouseDown && input.MouseX > GetPanelWidth())
                 Air->AddEmitter(ScreenToWorld(input), 0.65f, 5.0f, {0.0f, 3.0f}, sourceStep);
             Air->Step(deltaTime);
             World.Step(deltaTime);
@@ -117,7 +131,7 @@ namespace Riemann2D::Viewer
         if (Snow)
         {
             Snow->GetSettings().Gravity = {0, gravity};
-            if (input.MouseX > 260) Snow->SetCapsuleTarget(ScreenToWorld(input).X);
+            if (input.MouseX > GetPanelWidth()) Snow->SetCapsuleTarget(ScreenToWorld(input).X);
             Snow->Step(deltaTime);
         }
         if (Fluid || Air || Snow)
@@ -142,11 +156,12 @@ namespace Riemann2D::Viewer
         frame->FrameId = NextFrameId++;
         frame->ViewportWidth = Width;
         frame->ViewportHeight = Height;
-        frame->PanelWidth = 260;
+        frame->PanelWidth = GetPanelWidth();
         frame->Camera.Center = Snow ? Vector2{0, 2.5f} : Vector2{0, 4};
-        frame->Camera.VerticalSize = Snow ? std::max(12.0f, 16.5f * Height / std::max(Width - 260, 1)) : 16.0f;
+        frame->Camera.VerticalSize = Snow ? std::max(12.0f, 16.5f * Height /
+            std::max(Width - frame->PanelWidth, 1)) : 16.0f;
 
-        Interface.Begin(Width, Height, frame->PanelWidth, input);
+        Interface.Begin(Width, Height, frame->PanelWidth, input, DisplayScale);
         Interface.Label("RIEMANN 2D", {0.35f, 0.75f, 1.0f, 1.0f});
         if (Interface.Button("SCENE: " + Scenes[SelectedScene].Name)) SceneListExpanded = !SceneListExpanded;
         for (std::size_t index = 0; SceneListExpanded && index < Scenes.size(); ++index)
@@ -196,7 +211,7 @@ namespace Riemann2D::Viewer
             {
                 if (Interface.Button(SelectedSolver == 0 ? "BODY SOLVER: SEQUENTIAL" : "BODY SOLVER: LCP"))
                     SelectedSolver = 1 - SelectedSolver;
-                if (Interface.Button(SelectedBackend == 0 ? "BODY CPU: SCALAR" : "BODY CPU: SIMD"))
+                if (Interface.Button(SelectedBackend == 0 ? "BODY CPU: SCALAR" : "BODY CPU: SIMD", false, IsSolverBackendAvailable(SolverBackend2D::SIMDCPU)))
                     SelectedBackend = 1 - SelectedBackend;
             }
         }
@@ -207,14 +222,15 @@ namespace Riemann2D::Viewer
             if (Interface.Button("LCP", SelectedSolver == 1)) SelectedSolver = 1;
             Interface.Label("BACKEND");
             if (Interface.Button("SCALAR CPU", SelectedBackend == 0)) SelectedBackend = 0;
-            if (Interface.Button("SIMD CPU", SelectedBackend == 1)) SelectedBackend = 1;
+            if (Interface.Button("SIMD CPU", SelectedBackend == 1, IsSolverBackendAvailable(SolverBackend2D::SIMDCPU))) SelectedBackend = 1;
         }
         Interface.Label("DX11 METAL RHI", {0.48f, 0.55f, 0.68f, 1.0f});
 
         if (SelectedScene == DominoChainScene)
         {
             frame->Camera.Center = {10.0f, 7.0f};
-            frame->Camera.VerticalSize = std::max(17.0f, 31.0f * Height / std::max(Width - 260, 1));
+            frame->Camera.VerticalSize = std::max(17.0f, 31.0f * Height /
+                std::max(Width - frame->PanelWidth, 1));
         }
 
         frame->WorldDraws.push_back(BuildGridDraw());
@@ -281,16 +297,15 @@ namespace Riemann2D::Viewer
         if (Interface.Button("CPU", Snow->GetBackend() == ContinuumBackend::CPU)) Snow->SetBackend(ContinuumBackend::CPU);
         if (Interface.Button("SIMD", Snow->GetBackend() == ContinuumBackend::SIMD, SnowSimulation2D::IsSimdAvailable()))
             Snow->SetBackend(ContinuumBackend::SIMD);
-        const auto& cuda = GetCudaBackendInfo();
-        if (Interface.Button(cuda.Available ? "CUDA" : "CUDA: UNAVAILABLE", Snow->GetBackend() == ContinuumBackend::CUDA, cuda.Available))
-            Snow->SetBackend(ContinuumBackend::CUDA);
-        const auto& compute = GetComputeShaderBackendInfo();
-        if (Interface.Button(compute.Available ? "COMPUTE SHADER - " + compute.API : "COMPUTE: UNAVAILABLE",
-            Snow->GetBackend() == ContinuumBackend::ComputeShader, compute.Available))
-            Snow->SetBackend(ContinuumBackend::ComputeShader);
-        const bool metal = compute.Available && compute.API == "Metal";
-        if (Interface.Button(metal ? "METAL" : "METAL: MACOS ONLY", Snow->GetBackend() == ContinuumBackend::Metal, metal))
-            Snow->SetBackend(ContinuumBackend::Metal);
+        const ContinuumBackend backends[] = {ContinuumBackend::CUDA, ContinuumBackend::ComputeShader, ContinuumBackend::Metal};
+        const FluidComputeBackend probeBackends[] = {FluidComputeBackend::CUDA, FluidComputeBackend::ComputeShader, FluidComputeBackend::Metal};
+        const char* labels[] = {"CUDA", "DIRECTCOMPUTE", "METAL"};
+        for (int i=0;i<3;++i)
+        {
+            const bool available = GetOperatorAvailability(GpuOperator::Snow, probeBackends[i]).Available;
+            if (Interface.Button(std::string(labels[i]) + (available ? "" : ": UNAVAILABLE"), Snow->GetBackend() == backends[i], available))
+                Snow->SetBackend(backends[i]);
+        }
         char text[80];
         std::snprintf(text, sizeof(text), "PARTICLES: %zu", Snow->GetParticles().size());
         Interface.Label(text);
@@ -318,15 +333,16 @@ namespace Riemann2D::Viewer
             }
         };
         if (Interface.Button("CPU", GetSimulationBackend() == FluidComputeBackend::CPU)) select(FluidComputeBackend::CPU);
-        const auto& cuda = GetCudaBackendInfo();
-        if (Interface.Button(cuda.Available ? "CUDA" : "CUDA: UNAVAILABLE",
-            GetSimulationBackend() == FluidComputeBackend::CUDA, cuda.Available)) select(FluidComputeBackend::CUDA);
-        const auto& compute = GetComputeShaderBackendInfo();
-        const std::string computeLabel = compute.Available ? "COMPUTE SHADER: " + compute.API : "COMPUTE: UNAVAILABLE";
-        if (Interface.Button(computeLabel, GetSimulationBackend() == FluidComputeBackend::ComputeShader, compute.Available))
-            select(FluidComputeBackend::ComputeShader);
-        std::string device = GetSimulationBackend() == FluidComputeBackend::ComputeShader ? compute.DeviceName :
-            GetSimulationBackend() == FluidComputeBackend::CUDA ? cuda.DeviceName : "CPU ACTIVE";
+        const FluidComputeBackend backends[] = {FluidComputeBackend::CUDA, FluidComputeBackend::ComputeShader, FluidComputeBackend::Metal};
+        const char* labels[] = {"CUDA", "DIRECTCOMPUTE", "METAL"};
+        for (int i=0;i<3;++i)
+        {
+            const bool available = GetOperatorAvailability(Fluid ? GpuOperator::Liquid : GpuOperator::Air, backends[i]).Available;
+            if (Interface.Button(std::string(labels[i]) + (available ? "" : ": UNAVAILABLE"), GetSimulationBackend() == backends[i], available)) select(backends[i]);
+        }
+        std::string device = GetSimulationBackend() == FluidComputeBackend::ComputeShader ? GetComputeShaderBackendInfo().DeviceName
+            : GetSimulationBackend() == FluidComputeBackend::CUDA ? GetCudaBackendInfo().DeviceName
+            : GetSimulationBackend() == FluidComputeBackend::Metal ? GetMetalBackendInfo().DeviceName : "CPU ACTIVE";
         for (const std::string prefix : {std::string("NVIDIA "), std::string("GeForce ")})
             if (device.compare(0, prefix.size(), prefix) == 0) device.erase(0, prefix.size());
         const std::string& error = Fluid ? Fluid->GetBackendError() : Air->GetBackendError();
@@ -479,7 +495,7 @@ namespace Riemann2D::Viewer
 
     Vector2 Viewer::ScreenToWorld(const Render::InterfaceInput& input) const
     {
-        constexpr int panelWidth = 260;
+        const int panelWidth = GetPanelWidth();
         const float verticalSize = Snow ? std::max(12.0f, 16.5f * Height / std::max(Width - panelWidth, 1)) : 16.0f;
         const float viewportHeight = static_cast<float>(std::max(Height, 1));
         const float worldWidth = static_cast<float>(std::max(Width - panelWidth, 1));
@@ -532,7 +548,7 @@ namespace Riemann2D::Viewer
         }
 
         const Vector2 worldPosition = ScreenToWorld(input);
-        if (input.MousePressed && input.MouseX > 260)
+        if (input.MousePressed && input.MouseX > GetPanelWidth())
         {
             if (RigidBody2D* body = PickFluidBody(worldPosition))
             {
@@ -669,9 +685,12 @@ namespace Riemann2D::Viewer
             Snow = std::make_unique<SnowSimulation2D>();
             Snow->Reset(SnowQuality);
             Snow->SetBackend(SnowSimulation2D::IsSimdAvailable() ? ContinuumBackend::SIMD : ContinuumBackend::CPU);
-            if (GetCudaBackendInfo().Available) Snow->SetBackend(ContinuumBackend::CUDA);
-            else if (GetComputeShaderBackendInfo().Available)
-                Snow->SetBackend(GetComputeShaderBackendInfo().API == "Metal" ? ContinuumBackend::Metal : ContinuumBackend::ComputeShader);
+            for (auto backend : {ContinuumBackend::CUDA, ContinuumBackend::Metal, ContinuumBackend::ComputeShader})
+            {
+                const auto probeBackend = backend == ContinuumBackend::CUDA ? FluidComputeBackend::CUDA
+                    : backend == ContinuumBackend::Metal ? FluidComputeBackend::Metal : FluidComputeBackend::ComputeShader;
+                if (GetOperatorAvailability(GpuOperator::Snow, probeBackend).Available && Snow->SetBackend(backend)) break;
+            }
             SimulationMilliseconds = 0;
             return;
         }

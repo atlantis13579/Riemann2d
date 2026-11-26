@@ -1,6 +1,6 @@
 #include "FluidSimulation2D.h"
 #include "Cuda/CudaSolvers.h"
-#include "Compute/ComputeSolvers.h"
+
 
 #include "Maths/Maths.h"
 
@@ -39,7 +39,7 @@ namespace Riemann2D
         if (Backend != FluidComputeBackend::CPU)
         {
             if (!GpuSolver.Instance) GpuSolver.Instance = Backend == FluidComputeBackend::CUDA ?
-                CreateCudaFluidSolver() : CreateComputeFluidSolver();
+                CreateCudaFluidSolver() : Backend == FluidComputeBackend::Metal ? CreateMetalFluidSolver() : CreateDX11FluidSolver();
             if (GpuSolver.Instance && GpuSolver.Instance->Step(Settings, GetKernelRestDensity(),
                 substep, substeps, Particles, BackendError))
             {
@@ -56,16 +56,8 @@ namespace Riemann2D
     bool FluidSimulation2D::SetBackend(FluidComputeBackend backend)
     {
         BackendError.clear();
-        if (backend == FluidComputeBackend::CUDA && !GetCudaBackendInfo().Available)
-        {
-            BackendError = GetCudaBackendInfo().Message;
-            return false;
-        }
-        if (backend == FluidComputeBackend::ComputeShader && !GetComputeShaderBackendInfo().Available)
-        {
-            BackendError = GetComputeShaderBackendInfo().Message;
-            return false;
-        }
+        const auto& availability = GetOperatorAvailability(GpuOperator::Liquid, backend);
+        if (!availability.Available) { BackendError = availability.Message; return false; }
         if (Backend != backend) GpuSolver.Instance.reset();
         Backend = backend;
         return true;

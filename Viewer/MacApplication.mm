@@ -34,9 +34,11 @@
     view.layer = MetalLayer;
     const NSSize size = view.bounds.size;
     const CGFloat scale = Window.backingScaleFactor;
+    MetalLayer.contentsScale = scale;
     MetalLayer.drawableSize = CGSizeMake(size.width * scale, size.height * scale);
 
     Viewer = std::make_unique<Riemann2D::Viewer::Viewer>();
+    Viewer->SetDisplayScale(static_cast<float>(scale));
     if (!Viewer->Initialize((__bridge void*)MetalLayer,
                             static_cast<int>(size.width * scale), static_cast<int>(size.height * scale)))
     {
@@ -63,10 +65,12 @@
 
     NSView* view = Window.contentView;
     const CGFloat scale = Window.backingScaleFactor;
+    MetalLayer.contentsScale = scale;
     const NSSize size = view.bounds.size;
     const int width = static_cast<int>(size.width * scale);
     const int height = static_cast<int>(size.height * scale);
     MetalLayer.drawableSize = CGSizeMake(width, height);
+    Viewer->SetDisplayScale(static_cast<float>(scale));
     Viewer->Resize(width, height);
 
     NSPoint mouse = [view convertPoint:Window.mouseLocationOutsideOfEventStream fromView:nil];

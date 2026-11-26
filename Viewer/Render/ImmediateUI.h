@@ -17,7 +17,8 @@ namespace Riemann2D::Render
     class ImmediateUI
     {
     public:
-        void Begin(int width, int height, int panelWidth, const InterfaceInput& input);
+        void Begin(int width, int height, int panelWidth, const InterfaceInput& input,
+                   float displayScale = 1.0f);
         void Label(const std::string& text, const Color& color = {0.85f, 0.88f, 0.95f, 1.0f});
         bool Button(const std::string& text, bool selected = false, bool enabled = true);
         void Separator();
@@ -32,6 +33,7 @@ namespace Riemann2D::Render
         DrawPacket Draw;
         InterfaceInput Input;
         float CursorY = 0.0f;
-        int PanelWidth = 0;
+        float PanelWidth = 0.0f;
+        float DisplayScale = 1.0f;
     };
 }

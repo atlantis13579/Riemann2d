@@ -121,26 +121,15 @@ namespace Riemann2D
             BackendError = "SIMD is unavailable on this CPU architecture";
             return false;
         }
-        if (backend == ContinuumBackend::CUDA)
+        if (backend >= ContinuumBackend::CUDA)
         {
-            const auto& info = GetCudaBackendInfo();
-            if (!info.Available) { BackendError = info.Message; return false; }
-            auto solver = CreateCudaSnowSolver2D();
-            if (!solver) { BackendError = "CUDA deformation support was not built"; return false; }
-            GpuSolver = std::move(solver);
-            Backend = backend;
-            return true;
-        }
-        if (backend == ContinuumBackend::ComputeShader || backend == ContinuumBackend::Metal)
-        {
-            const auto& info = GetComputeShaderBackendInfo();
-            if (!info.Available) { BackendError = info.Message; return false; }
-            if (backend == ContinuumBackend::Metal && info.API != "Metal")
-            {
-                BackendError = "Metal requires an Apple Metal device";
-                return false;
-            }
-            GpuSolver = CreateComputeSnowSolver2D();
+            const auto fluidBackend = backend == ContinuumBackend::CUDA ? FluidComputeBackend::CUDA
+                : backend == ContinuumBackend::Metal ? FluidComputeBackend::Metal : FluidComputeBackend::ComputeShader;
+            const auto& availability = GetOperatorAvailability(GpuOperator::Snow, fluidBackend);
+            if (!availability.Available) { BackendError = availability.Message; return false; }
+            GpuSolver = backend == ContinuumBackend::CUDA ? CreateCudaSnowSolver2D()
+                : backend == ContinuumBackend::Metal ? CreateMetalSnowSolver2D() : CreateDX11SnowSolver2D();
+            if (!GpuSolver) { BackendError = "GPU deformation support was not built"; return false; }
             Backend = backend;
             return true;
         }
@@ -432,7 +421,7 @@ namespace Riemann2D
             Capsule.Center += Capsule.Velocity * dt;
             if (Backend != ContinuumBackend::CPU && Backend != ContinuumBackend::SIMD)
             {
-                if (!GpuSolver) GpuSolver = Backend == ContinuumBackend::CUDA ? CreateCudaSnowSolver2D() : CreateComputeSnowSolver2D();
+                if (!GpuSolver) GpuSolver = Backend == ContinuumBackend::CUDA ? CreateCudaSnowSolver2D() : Backend == ContinuumBackend::Metal ? CreateMetalSnowSolver2D() : CreateDX11SnowSolver2D();
                 if (!GpuSolver || !GpuSolver->Step(Settings, Capsule, dt, Particles, BackendError))
                 {
                     if (BackendError.empty()) BackendError = "Continuum GPU solver creation failed";

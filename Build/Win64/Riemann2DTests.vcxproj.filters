@@ -4,25 +4,10 @@
     <ClCompile Include="F:\src\Riemann2d\Test\TestAerodynamics.cpp">
       <Filter>Test</Filter>
     </ClCompile>
-    <ClCompile Include="F:\src\Riemann2d\Test\TestBroadPhase.cpp">
+    <ClCompile Include="F:\src\Riemann2d\Test\TestBackendAvailability.cpp">
       <Filter>Test</Filter>
     </ClCompile>
     <ClCompile Include="F:\src\Riemann2d\Test\TestCollision.cpp">
-      <Filter>Test</Filter>
-    </ClCompile>
-    <ClCompile Include="F:\src\Riemann2d\Test\TestComputeAir.cpp">
-      <Filter>Test</Filter>
-    </ClCompile>
-    <ClCompile Include="F:\src\Riemann2d\Test\TestComputeFluid.cpp">
-      <Filter>Test</Filter>
-    </ClCompile>
-    <ClCompile Include="F:\src\Riemann2d\Test\TestConstraints.cpp">
-      <Filter>Test</Filter>
-    </ClCompile>
-    <ClCompile Include="F:\src\Riemann2d\Test\TestCudaAir.cpp">
-      <Filter>Test</Filter>
-    </ClCompile>
-    <ClCompile Include="F:\src\Riemann2d\Test\TestCudaFluid.cpp">
       <Filter>Test</Filter>
     </ClCompile>
     <ClCompile Include="F:\src\Riemann2d\Test\TestDestruction.cpp">
@@ -43,56 +28,12 @@
     <ClCompile Include="F:\src\Riemann2d\Test\TestRagdoll.cpp">
       <Filter>Test</Filter>
     </ClCompile>
+    <ClCompile Include="F:\src\Riemann2d\Test\TestRobotController.cpp">
+      <Filter>Test</Filter>
+    </ClCompile>
     <ClCompile Include="F:\src\Riemann2d\Test\TestRope.cpp">
       <Filter>Test</Filter>
     </ClCompile>
-    <ClCompile Include="F:\src\Riemann2d\Test\TestSolvers.cpp">
-      <Filter>Test</Filter>
-    </ClCompile>
-    <ClCompile Include="F:\src\Riemann2d\Test\TestTrees.cpp">
-      <Filter>Test</Filter>
-    </ClCompile>
-    <ClCompile Include="F:\src\Riemann2d\Test\TestViewerRender.cpp">
-      <Filter>Test</Filter>
-    </ClCompile>
-    <ClCompile Include="F:\src\Riemann2d\Viewer\Render\ImmediateUI.cpp">
-      <Filter>Viewer\Render</Filter>
-    </ClCompile>
-    <ClCompile Include="F:\src\Riemann2d\Viewer\Render\RenderThread.cpp">
-      <Filter>Viewer\Render</Filter>
-    </ClCompile>
-    <ClCompile Include="F:\src\Riemann2d\Viewer\Render\Renderer2.cpp">
-      <Filter>Viewer\Render</Filter>
-    </ClCompile>
-    <ClCompile Include="F:\src\Riemann2d\Viewer\Render\RHI\Null\NullRHI.cpp">
-      <Filter>Viewer\Render\RHI\Null</Filter>
-    </ClCompile>
-    <ClCompile Include="F:\src\Riemann2d\Viewer\FluidSurfaceBuilder.cpp">
-      <Filter>Viewer</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="F:\src\Riemann2d\Viewer\Render\ImmediateUI.h">
-      <Filter>Viewer\Render</Filter>
-    </ClInclude>
-    <ClInclude Include="F:\src\Riemann2d\Viewer\Render\Projection.h">
-      <Filter>Viewer\Render</Filter>
-    </ClInclude>
-    <ClInclude Include="F:\src\Riemann2d\Viewer\Render\RenderThread.h">
-      <Filter>Viewer\Render</Filter>
-    </ClInclude>
-    <ClInclude Include="F:\src\Riemann2d\Viewer\Render\RenderTypes.h">
-      <Filter>Viewer\Render</Filter>
-    </ClInclude>
-    <ClInclude Include="F:\src\Riemann2d\Viewer\Render\Renderer2.h">
-      <Filter>Viewer\Render</Filter>
-    </ClInclude>
-    <ClInclude Include="F:\src\Riemann2d\Viewer\Render\RHI\RHI.h">
-      <Filter>Viewer\Render\RHI</Filter>
-    </ClInclude>
-    <ClInclude Include="F:\src\Riemann2d\Viewer\Render\RHI\Null\NullRHI.h">
-      <Filter>Viewer\Render\RHI\Null</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="F:\src\Riemann2d\Build\CMakeLists.txt" />
@@ -100,18 +41,6 @@
   <ItemGroup>
     <Filter Include="Test">
       <UniqueIdentifier>{AFFF6711-FE93-3841-829B-D3D8F0C1B267}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Viewer">
-      <UniqueIdentifier>{4A2BD9D7-1EDE-3D2D-B7E6-699BC2293F00}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Viewer\Render">
-      <UniqueIdentifier>{49FFB61D-BDC5-3C13-AB9F-70CE5BFE1EEC}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Viewer\Render\RHI">
-      <UniqueIdentifier>{1E2586A5-2CA8-37BA-8480-5D685EF5B2D2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Viewer\Render\RHI\Null">
-      <UniqueIdentifier>{D0C93E28-3E86-3A8E-8741-A099EB70DBA5}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

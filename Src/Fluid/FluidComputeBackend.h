@@ -5,7 +5,7 @@
 
 namespace Riemann2D
 {
-    enum class FluidComputeBackend { CPU, CUDA, ComputeShader };
+    enum class FluidComputeBackend { CPU, CUDA, ComputeShader, Metal };
 
     struct CudaBackendInfo
     {
@@ -26,6 +26,13 @@ namespace Riemann2D
     };
 
     const ComputeShaderBackendInfo& GetComputeShaderBackendInfo();
+    const ComputeShaderBackendInfo& GetMetalBackendInfo();
+
+    enum class GpuOperator { Liquid, Air, Snow };
+    struct OperatorAvailability { bool Available = false; std::string Message; };
+    // Availability describes build/device support; compilation and execution may still fail at use.
+    const OperatorAvailability& GetOperatorAvailability(GpuOperator operation, FluidComputeBackend backend);
+    void ProbeGpuOperators();
 
     // Simulation copies retain host state but never share mutable device resources.
     template<class Backend>

@@ -8,6 +8,8 @@ namespace Riemann2D
         SIMDCPU
     };
 
+    bool IsSolverBackendAvailable(SolverBackend2D backend);
+
     // Multiplies an n-by-n row-major matrix by a vector.
     void DenseMatrixVectorMultiply(const float* matrix, const float* vector, float* output,
                                    int n, SolverBackend2D backend);

@@ -75,6 +75,16 @@ namespace Riemann2D
 #endif
     }
 
+    bool IsSolverBackendAvailable(SolverBackend2D backend)
+    {
+        if (backend == SolverBackend2D::ScalarCPU) return true;
+#if defined(__SSE2__) || defined(_M_X64) || defined(__ARM_NEON) || defined(__ARM_NEON__)
+        return backend == SolverBackend2D::SIMDCPU;
+#else
+        return false;
+#endif
+    }
+
     float Dot(const float* left, const float* right, int n, SolverBackend2D backend)
     {
         if (left == nullptr || right == nullptr || n <= 0)

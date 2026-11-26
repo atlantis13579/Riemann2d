@@ -21,6 +21,7 @@ namespace Riemann2D::Viewer
     public:
         bool Initialize(void* nativeWindow, int width, int height);
         void Resize(int width, int height);
+        void SetDisplayScale(float scale);
         void Tick(float deltaTime, const Render::InterfaceInput& input);
         void Shutdown();
         void CaptureNextFrame(const std::string& path) { NextCapturePath = path; }
@@ -60,6 +61,7 @@ namespace Riemann2D::Viewer
         void HandleFluidInteraction(const Render::InterfaceInput& input);
         void CancelFluidInteraction();
         Vector2 ScreenToWorld(const Render::InterfaceInput& input) const;
+        int GetPanelWidth() const;
         RigidBody2D* PickFluidBody(const Vector2& worldPosition) const;
         void UpdateFluidTankTransform();
         void ConfineFluidBodiesToTank();
@@ -73,6 +75,7 @@ namespace Riemann2D::Viewer
         std::uint64_t LastSubmittedFrame = 0;
         int Width = 1280;
         int Height = 720;
+        float DisplayScale = 1.0f;
         int SelectedScene = 0;
         int SelectedSolver = 0;
         int SelectedBackend = 0;
